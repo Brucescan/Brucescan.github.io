@@ -1,17 +1,84 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Hero from "../components/Hero.astro";
+import BlogCard from "../components/BlogCard.astro";
+import { getCollection } from "astro:content";
 
+const posts = await getCollection("blog");
+const sortedPosts = posts
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout>
+  <Hero />
+
+  <section id="posts" class="section">
+    <div class="container">
+      <h2 class="section-title">Latest writing</h2>
+      <p class="section-subtitle">Thoughts on code, design, and the spaces in between.</p>
+
+      {
+        sortedPosts.length === 0 ? (
+          <div class="empty-state">
+            <p>No posts yet. Start writing in <code>src/content/blog/</code>.</p>
+          </div>
+        ) : (
+          <div class="blog-grid">
+            {sortedPosts.map((post) => (
+              <BlogCard
+                title={post.data.title}
+                description={post.data.description}
+                date={post.data.date.toISOString()}
+                slug={post.id}
+                readingTime={post.data.readingTime}
+              />
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <section id="about" class="section">
+    <div class="container">
+      <h2 class="section-title">About</h2>
+      <div class="about-content">
+        <!--
+          TODO: Replace this with your own bio.
+          You can also add a photo of yourself in public/images/
+        -->
+        <p>Hello! I'm a developer who loves building things for the web. This is my space to share ideas, document learnings, and connect with others.</p>
+        <p>When I'm not coding, you'll find me exploring cities, reading science fiction, and tinkering with side projects.</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .empty-state {
+    text-align: center;
+    padding: var(--space-3xl) var(--space-xl);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--color-border-strong);
+    color: var(--color-text-secondary);
+  }
+
+  .empty-state code {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    background: rgba(0, 0, 0, 0.04);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .about-content {
+    max-width: 640px;
+  }
+
+  .about-content p {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+  }
+</style>
