@@ -43,15 +43,92 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
             <span>{post.data.readingTime}</span>
           </>
         )}
+        {post.data.tags && post.data.tags.length > 0 && (
+          <>
+            <span class="dot">·</span>
+            <span class="post-header-tags">
+              {post.data.tags.map((tag) => (
+                <a href={`/tags/${tag.toLowerCase()}`} class="post-header-tag">{tag}</a>
+              ))}
+            </span>
+          </>
+        )}
       </div>
       <h1 class="post-title">{post.data.title}</h1>
       <p class="post-desc">{post.data.description}</p>
     </header>
 
-    <div class="post-body container">
-      <Content />
+    <div class="post-layout container">
+      <aside class="post-toc-sidebar" aria-label="Table of Contents">
+        <nav class="toc" id="toc">
+          <div class="toc-title">On this page</div>
+          <ul class="toc-list" id="tocList"></ul>
+        </nav>
+      </aside>
+
+      <div class="post-body" id="postBody">
+        <Content />
+      </div>
     </div>
   </article>
+
+  <script>
+    // --- Build TOC from article headings ---
+    (function() {
+      const postBody = document.getElementById("postBody");
+      const tocList = document.getElementById("tocList");
+      const toc = document.getElementById("toc");
+      if (!postBody || !tocList) return;
+
+      const headings = postBody.querySelectorAll("h2, h3");
+      if (headings.length === 0) {
+        toc?.remove();
+        return;
+      }
+
+      const tocItems = [];
+
+      headings.forEach((h, i) => {
+        // Add id for anchor linking
+        const id = `heading-${i}`;
+        h.id = id;
+
+        const item = document.createElement("li");
+        item.className = "toc-item";
+        item.style.paddingLeft = h.tagName === "H3" ? "var(--space-xl)" : "var(--space-md)";
+
+        const link = document.createElement("a");
+        link.className = "toc-link";
+        link.href = `#${id}`;
+        link.textContent = h.textContent;
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          h.scrollIntoView({ behavior: "smooth", block: "start" });
+          history.pushState(null, "", `#${id}`);
+        });
+
+        item.appendChild(link);
+        tocList.appendChild(item);
+        tocItems.push({ item, id });
+      });
+
+      // --- Highlight current section on scroll ---
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const idx = tocItems.findIndex((t) => t.id === entry.target.id);
+            if (idx !== -1 && entry.isIntersecting) {
+              tocItems.forEach((t) => t.item.classList.remove("active"));
+              tocItems[idx].item.classList.add("active");
+            }
+          });
+        },
+        { rootMargin: "-80px 0px -60% 0px", threshold: 0 }
+      );
+
+      headings.forEach((h) => observer.observe(h));
+    })();
+  </script>
 </BaseLayout>
 
 <style>
@@ -87,10 +164,32 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
     margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
   }
 
   .dot {
     color: var(--color-text-tertiary);
+  }
+
+  .post-header-tags {
+    display: inline-flex;
+    gap: 6px;
+  }
+
+  .post-header-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    background: var(--color-code-bg);
+    border-radius: 980px;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .post-header-tag:hover {
+    color: var(--color-text);
+    background: var(--color-border);
   }
 
   .post-title {
@@ -108,8 +207,21 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
     max-width: 600px;
   }
 
+  /* Two-column layout */
+  .post-layout {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: var(--space-3xl);
+    align-items: start;
+  }
+
+  .post-toc-sidebar {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-xl));
+  }
+
   .post-body {
-    max-width: 680px;
+    min-width: 0;
   }
 
   .post-body :global(h2) {
@@ -118,6 +230,7 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
     margin-top: var(--space-2xl);
     margin-bottom: var(--space-md);
     letter-spacing: -0.02em;
+    scroll-margin-top: calc(var(--header-height) + var(--space-md));
   }
 
   .post-body :global(h3) {
@@ -126,18 +239,20 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
     margin-top: var(--space-xl);
     margin-bottom: var(--space-sm);
     letter-spacing: -0.02em;
+    scroll-margin-top: calc(var(--header-height) + var(--space-md));
   }
 
   .post-body :global(p) {
     font-size: var(--text-lg);
     line-height: 1.75;
-    color: #333;
+    color: var(--color-text);
+    opacity: 0.9;
     margin-bottom: var(--space-lg);
   }
 
   .post-body :global(strong) {
     font-weight: 600;
-    color: var(--color-text);
+    opacity: 1;
   }
 
   .post-body :global(ul),
@@ -149,27 +264,29 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
   .post-body :global(li) {
     font-size: var(--text-lg);
     line-height: 1.75;
-    color: #333;
+    color: var(--color-text);
+    opacity: 0.9;
     margin-bottom: var(--space-xs);
   }
 
   .post-body :global(code) {
     font-family: var(--font-mono);
     font-size: 0.9em;
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--color-code-bg);
     padding: 2px 6px;
     border-radius: 4px;
   }
 
   .post-body :global(pre) {
-    background: #1d1d1f;
-    color: #f5f5f7;
+    background: var(--color-code-block);
+    color: var(--color-code-block-text);
     padding: var(--space-xl);
     border-radius: var(--radius-md);
     overflow-x: auto;
     margin-bottom: var(--space-lg);
     font-size: var(--text-sm);
     line-height: 1.6;
+    border: 1px solid var(--color-border);
   }
 
   .post-body :global(pre code) {
@@ -177,6 +294,7 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
     padding: 0;
     color: inherit;
     font-size: inherit;
+    border: none;
   }
 
   .post-body :global(blockquote) {
@@ -201,6 +319,16 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
     color: var(--color-accent);
     text-decoration: underline;
     text-underline-offset: 2px;
+  }
+
+  @media (max-width: 1024px) {
+    .post-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .post-toc-sidebar {
+      display: none;
+    }
   }
 
   @media (max-width: 768px) {

@@ -3,6 +3,7 @@ title: "Designing with simplicity"
 description: "Why the best designs are the ones that get out of the way — lessons from Apple's design philosophy."
 date: 2026-04-28
 readingTime: "5 min read"
+tags: ["Design", "Typography", "Philosophy"]
 ---
 
 Great design is not about how much you add, but how much you take away. This principle, central to Apple's design philosophy, has shaped everything from the iPhone to the layout of this blog.

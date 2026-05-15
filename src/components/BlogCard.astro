@@ -5,9 +5,10 @@ interface Props {
   date: string;
   slug: string;
   readingTime?: string;
+  tags?: string[];
 }
 
-const { title, description, date, slug, readingTime } = Astro.props;
+const { title, description, date, slug, readingTime, tags = [] } = Astro.props;
 
 const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
   year: "numeric",
@@ -26,6 +27,15 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
       </div>
       <h3 class="blog-card-title">{title}</h3>
       <p class="blog-card-desc">{description}</p>
+      {
+        tags.length > 0 && (
+          <div class="blog-card-tags">
+            {tags.map((tag) => (
+              <span class="blog-card-tag">{tag}</span>
+            ))}
+          </div>
+        )
+      }
       <span class="blog-card-cta">
         Read more
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -98,6 +108,22 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .blog-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .blog-card-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: var(--color-code-bg);
+    border-radius: 980px;
   }
 
   .blog-card-cta {

@@ -15,21 +15,42 @@ const currentPath = Astro.url.pathname;
       </span>
       <span class="logo-text">{site.title.split(" ")[0]}</span>
     </a>
-    <nav class="nav" aria-label="Main navigation">
-      {
-        site.nav.map((item) => (
-          <a
-            href={item.href}
-            class:list={[
-              "nav-link",
-              { active: currentPath === item.href },
-            ]}
-          >
-            {item.label}
-          </a>
-        ))
-      }
-    </nav>
+
+    <div class="header-actions">
+      <nav class="nav" aria-label="Main navigation">
+        {
+          site.nav.map((item) => (
+            <a
+              href={item.href}
+              class:list={["nav-link", { active: currentPath === item.href }]}
+            >
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
+
+      <div class="header-tools">
+        <button class="search-trigger" id="searchTrigger" aria-label="Search">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="7" cy="7" r="4.5"/>
+            <path d="M10.5 10.5L14 14" stroke-linecap="round"/>
+          </svg>
+          <span class="shortcut-label">Search</span>
+          <span class="shortcut">⌘K</span>
+        </button>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+          <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="3.5"/>
+            <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke-linecap="round"/>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M13.5 10.5A6 6 0 015.5 2.5 6 6 0 1013.5 10.5z" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -38,7 +59,7 @@ const currentPath = Astro.url.pathname;
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(245, 245, 247, 0.72);
+    background: var(--color-header-bg);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     border-bottom: 1px solid var(--color-border);
@@ -64,6 +85,7 @@ const currentPath = Astro.url.pathname;
     text-decoration: none;
     letter-spacing: -0.02em;
     transition: opacity var(--transition-fast);
+    flex-shrink: 0;
   }
 
   .logo:hover {
@@ -75,6 +97,12 @@ const currentPath = Astro.url.pathname;
     display: flex;
     align-items: center;
     color: var(--color-text);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
   }
 
   .nav {
@@ -95,10 +123,44 @@ const currentPath = Astro.url.pathname;
 
   .nav-link:hover {
     color: var(--color-text);
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--color-code-bg);
   }
 
   .nav-link.active {
     color: var(--color-text);
+  }
+
+  .header-tools {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  @media (max-width: 768px) {
+    .nav {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .search-trigger .shortcut-label {
+      display: none;
+    }
+
+    .search-trigger .shortcut {
+      display: none;
+    }
+
+    .search-trigger {
+      padding: var(--space-xs);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+    }
+
+    .search-trigger svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 </style>

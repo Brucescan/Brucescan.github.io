@@ -3,6 +3,7 @@ title: "Why I started this blog"
 description: "The motivations behind creating a personal space on the web and what I hope to share here."
 date: 2026-04-15
 readingTime: "3 min read"
+tags: ["Personal", "Writing"]
 ---
 
 Every developer should have a blog. Not for clout or SEO, but because writing is thinking made visible.

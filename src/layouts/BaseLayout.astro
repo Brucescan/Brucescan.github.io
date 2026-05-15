@@ -2,21 +2,33 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { site } from "../data/site";
+import { getCollection } from "astro:content";
 import "../styles/global.css";
 
 interface Props {
   title?: string;
   description?: string;
+  showToc?: boolean;
 }
 
 const { title, description } = Astro.props;
 
 const pageTitle = title ? `${title} — ${site.title}` : site.title;
 const pageDescription = description ?? site.description;
+
+// Build search index from all blog posts
+const allPosts = await getCollection("blog");
+const searchIndex = allPosts.map((p) => ({
+  id: p.id,
+  title: p.data.title,
+  description: p.data.description,
+  date: p.data.date.toISOString(),
+  readingTime: p.data.readingTime,
+}));
 ---
 
 <!doctype html>
-<html lang={site.lang}>
+<html lang={site.lang} data-theme="light">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -32,12 +44,227 @@ const pageDescription = description ?? site.description;
     <meta property="og:description" content={pageDescription} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={site.url} />
+
+    <!-- Prevent flash of wrong theme -->
+    <script is:inline>
+      (function() {
+        const stored = localStorage.getItem("theme");
+        const theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+        if (!stored) {
+          // On first visit, briefly disable transitions to prevent flash
+          document.body && document.body.classList.add("no-transition");
+          document.addEventListener("DOMContentLoaded", () => {
+            document.body && document.body.classList.remove("no-transition");
+          });
+        }
+      })();
+    </script>
   </head>
   <body>
+    <!-- Reading progress bar -->
+    <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
+
+    <!-- Search overlay -->
+    <div class="search-overlay" id="searchOverlay" role="dialog" aria-label="Search">
+      <div class="search-dialog">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/>
+          </svg>
+          <input
+            type="text"
+            class="search-input"
+            id="searchInput"
+            placeholder="Search articles..."
+            autocomplete="off"
+          />
+          <span class="shortcut" style="font-size:var(--text-xs);color:var(--color-text-tertiary);border:1px solid var(--color-border);border-radius:4px;padding:0 4px;">esc</span>
+        </div>
+        <div class="search-results" id="searchResults">
+          <div class="search-empty">Start typing to find articles...</div>
+        </div>
+      </div>
+    </div>
+
     <Header />
     <main>
       <slot />
     </main>
     <Footer />
+
+    <!-- Back to top -->
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8 13V3M3 8l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Search data -->
+    <script type="application/json" id="searchIndex">
+      {JSON.stringify(searchIndex)}
+    </script>
+
+    <!-- Theme + Search + UI scripts -->
+    <script>
+      // --- Theme toggle ---
+      const themeToggle = document.getElementById("themeToggle");
+      if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+          const html = document.documentElement;
+          const current = html.getAttribute("data-theme");
+          const next = current === "dark" ? "light" : "dark";
+          html.setAttribute("data-theme", next);
+          localStorage.setItem("theme", next);
+        });
+      }
+
+      // Listen for system theme changes
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+        if (!localStorage.getItem("theme")) {
+          document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
+        }
+      });
+
+      // --- Search ---
+      const searchIndex = JSON.parse(document.getElementById("searchIndex")?.textContent || "[]");
+      const searchOverlay = document.getElementById("searchOverlay");
+      const searchInput = document.getElementById("searchInput");
+      const searchResults = document.getElementById("searchResults");
+      const searchTrigger = document.getElementById("searchTrigger");
+
+      function openSearch() {
+        searchOverlay?.classList.add("active");
+        searchInput?.focus();
+        document.body.style.overflow = "hidden";
+        renderResults("");
+      }
+
+      function closeSearch() {
+        searchOverlay?.classList.remove("active");
+        document.body.style.overflow = "";
+        if (searchInput) searchInput.value = "";
+      }
+
+      searchTrigger?.addEventListener("click", openSearch);
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+          e.preventDefault();
+          openSearch();
+        }
+        if (e.key === "Escape") {
+          closeSearch();
+        }
+      });
+
+      // Close on overlay click
+      searchOverlay?.addEventListener("click", (e) => {
+        if (e.target === searchOverlay) closeSearch();
+      });
+
+      function fuzzyMatch(text, query) {
+        const t = text.toLowerCase();
+        const q = query.toLowerCase();
+        if (t.includes(q)) return true;
+        // Simple fuzzy: check if all chars of query appear in order
+        let qi = 0;
+        for (let i = 0; i < t.length && qi < q.length; i++) {
+          if (t[i] === q[qi]) qi++;
+        }
+        return qi === q.length;
+      }
+
+      function renderResults(query) {
+        if (!searchResults) return;
+        if (!query.trim()) {
+          searchResults.innerHTML = '<div class="search-empty">Start typing to find articles...</div>';
+          return;
+        }
+
+        const results = searchIndex.filter(
+          (p) => fuzzyMatch(p.title, query) || fuzzyMatch(p.description, query)
+        );
+
+        if (results.length === 0) {
+          searchResults.innerHTML = '<div class="search-empty">No articles found.</div>';
+          return;
+        }
+
+        searchResults.innerHTML = results
+          .map(
+            (p) => `
+            <a href="/blog/${p.id}" class="search-result">
+              <div class="search-result-title">${escapeHtml(p.title)}</div>
+              <div class="search-result-desc">${escapeHtml(p.description)}</div>
+            </a>
+          `
+          )
+          .join("");
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      searchInput?.addEventListener("input", (e) => {
+        renderResults(e.target.value);
+      });
+
+      // --- Reading progress ---
+      const progressBar = document.getElementById("readingProgress");
+      if (progressBar) {
+        window.addEventListener("scroll", () => {
+          const scrollTop = window.scrollY;
+          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+          progressBar.style.width = `${Math.min(progress, 100)}%`;
+        }, { passive: true });
+      }
+
+      // --- Back to top ---
+      const backToTop = document.getElementById("backToTop");
+      if (backToTop) {
+        window.addEventListener("scroll", () => {
+          if (window.scrollY > 400) {
+            backToTop.classList.add("visible");
+          } else {
+            backToTop.classList.remove("visible");
+          }
+        }, { passive: true });
+
+        backToTop.addEventListener("click", () => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+
+      // --- Code copy buttons ---
+      document.querySelectorAll("pre").forEach((pre) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-block-wrapper";
+        pre.parentNode?.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.setAttribute("aria-label", "Copy code");
+        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v6.5A1.5 1.5 0 003 11h1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        wrapper.appendChild(btn);
+
+        btn.addEventListener("click", async () => {
+          const code = pre.querySelector("code")?.textContent || pre.textContent || "";
+          await navigator.clipboard.writeText(code);
+          btn.classList.add("copied");
+          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          setTimeout(() => {
+            btn.classList.remove("copied");
+            btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v6.5A1.5 1.5 0 003 11h1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          }, 2000);
+        });
+      });
+    </script>
   </body>
 </html>

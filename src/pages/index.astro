@@ -2,11 +2,23 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
 import BlogCard from "../components/BlogCard.astro";
+import TagsBar from "../components/TagsBar.astro";
 import { getCollection } from "astro:content";
 
-const posts = await getCollection("blog");
-const sortedPosts = posts
+const allPosts = await getCollection("blog");
+const sortedPosts = allPosts
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Build tag list with counts
+const tagMap = new Map<string, number>();
+for (const post of allPosts) {
+  for (const tag of post.data.tags) {
+    tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+  }
+}
+const tags = Array.from(tagMap.entries())
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 ---
 
 <BaseLayout>
@@ -16,6 +28,8 @@ const sortedPosts = posts
     <div class="container">
       <h2 class="section-title">Latest writing</h2>
       <p class="section-subtitle">Thoughts on code, design, and the spaces in between.</p>
+
+      {tags.length > 0 && <TagsBar tags={tags} activeTag="" />}
 
       {
         sortedPosts.length === 0 ? (
@@ -31,6 +45,7 @@ const sortedPosts = posts
                 date={post.data.date.toISOString()}
                 slug={post.id}
                 readingTime={post.data.readingTime}
+                tags={post.data.tags}
               />
             ))}
           </div>
@@ -41,12 +56,8 @@ const sortedPosts = posts
 
   <section id="about" class="section">
     <div class="container">
-      <h2 class="section-title">About</h2>
+      <h2 class="section-title">Hello World!</h2>
       <div class="about-content">
-        <!--
-          TODO: Replace this with your own bio.
-          You can also add a photo of yourself in public/images/
-        -->
         <p>Hello! I'm a developer who loves building things for the web. This is my space to share ideas, document learnings, and connect with others.</p>
         <p>When I'm not coding, you'll find me exploring cities, reading science fiction, and tinkering with side projects.</p>
       </div>
@@ -67,7 +78,7 @@ const sortedPosts = posts
   .empty-state code {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--color-code-bg);
     padding: 2px 6px;
     border-radius: 4px;
   }
