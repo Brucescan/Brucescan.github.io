@@ -3,15 +3,22 @@ import { site } from "../data/site";
 ---
 
 <section class="hero">
+  <!-- Animated liquid blobs -->
+  <div class="hero-blobs" aria-hidden="true">
+    <div class="hero-blob"></div>
+    <div class="hero-blob"></div>
+    <div class="hero-blob"></div>
+  </div>
+
   <div class="container hero-content">
-    <div class="hero-avatar-wrapper">
+    <div class="hero-avatar-wrapper reveal">
       <div class="hero-avatar">
         <img src="/images/avatar.jpg" alt={site.author} width="80" height="80" />
       </div>
     </div>
-    <h1 class="hero-title">{site.title}</h1>
-    <p class="hero-tagline">{site.description}</p>
-    <div class="hero-actions">
+    <h1 class="hero-title reveal">{site.title}</h1>
+    <p class="hero-tagline reveal">{site.description}</p>
+    <div class="hero-actions reveal">
       <a href="#posts" class="btn btn-primary">Read the blog</a>
       {
         site.social.github && (
@@ -28,6 +35,8 @@ import { site } from "../data/site";
   .hero {
     padding: var(--space-4xl) 0 var(--space-3xl);
     text-align: center;
+    position: relative;
+    overflow: hidden;
   }
 
   .hero-content {
@@ -35,6 +44,8 @@ import { site } from "../data/site";
     flex-direction: column;
     align-items: center;
     gap: var(--space-lg);
+    position: relative;
+    z-index: 1;
   }
 
   .hero-avatar-wrapper {
@@ -45,27 +56,31 @@ import { site } from "../data/site";
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    overflow: hidden;
-    box-shadow: 0 4px 24px var(--color-shadow);
-    transition: transform var(--transition-normal);
+    overflow: visible;
+    position: relative;
   }
 
-  .hero-avatar:hover {
-    transform: scale(1.05);
-  }
-
-  .hero-avatar img,
-  .hero-avatar svg {
-    width: 100%;
-    height: 100%;
+  .hero-avatar img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
     display: block;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 24px var(--color-shadow);
+    transition: transform var(--transition-spring);
+    object-fit: cover;
+  }
+
+  .hero-avatar:hover img {
+    transform: scale(1.06);
   }
 
   .hero-title {
     font-size: var(--text-4xl);
     font-weight: 700;
     letter-spacing: -0.04em;
-    background: linear-gradient(135deg, var(--color-text) 0%, #555 100%);
+    background: linear-gradient(135deg, var(--color-text) 0%, var(--color-hero-gradient-end) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -98,8 +113,10 @@ import { site } from "../data/site";
     border: none;
     cursor: pointer;
     text-decoration: none;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-spring);
     letter-spacing: -0.01em;
+    position: relative;
+    overflow: hidden;
   }
 
   .btn-primary {
@@ -110,8 +127,8 @@ import { site } from "../data/site";
   .btn-primary:hover {
     background: #333;
     color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   }
 
   .btn-secondary {
@@ -121,7 +138,9 @@ import { site } from "../data/site";
   }
 
   .btn-secondary:hover {
-    background: #f0f0f0;
+    background: var(--color-bg);
     color: var(--color-text);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 16px var(--color-shadow-md);
   }
 </style>

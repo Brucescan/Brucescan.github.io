@@ -19,11 +19,19 @@ if (!post) {
 
 const { Content } = await render(post);
 
+// Related posts: same tags, excluding current
+const allPosts = await getCollection("blog");
+const relatedPosts = allPosts
+  .filter((p) => p.id !== id && p.data.tags.some((t) => post.data.tags.includes(t)))
+  .slice(0, 2);
+
 const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
   year: "numeric",
   month: "long",
   day: "numeric",
 });
+
+const pageUrl = `https://brucescan.github.io/blog/${id}`;
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
@@ -68,9 +76,52 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
 
       <div class="post-body" id="postBody">
         <Content />
+
+        <div class="share-section">
+          <div class="share-title">Share this post</div>
+          <div class="share-buttons">
+            <button class="share-btn" id="copyLinkBtn" aria-label="Copy link">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M10 4H4a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2v-1M6 12l8-8M10 5l2-1 1 2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {
+          relatedPosts.length > 0 && (
+            <div class="related-posts">
+              <h3 class="related-title">Related posts</h3>
+              <div class="related-grid">
+                {relatedPosts.map((rp) => (
+                  <a href={`/blog/${rp.id}`} class="related-card">
+                    <div class="related-card-title">{rp.data.title}</div>
+                    <div class="related-card-date">
+                      {rp.data.date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )
+        }
       </div>
     </div>
   </article>
+
+  <script>
+    document.getElementById("copyLinkBtn")?.addEventListener("click", function() {
+      navigator.clipboard.writeText(window.location.href).then(function() {
+        var btn = document.getElementById("copyLinkBtn");
+        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        btn.style.color = "#30d158";
+        setTimeout(function() {
+          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4H4a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2v-1M6 12l8-8M10 5l2-1 1 2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          btn.style.color = "";
+        }, 2000);
+      });
+    });
+  </script>
 
   <script>
     // --- Build TOC from article headings ---

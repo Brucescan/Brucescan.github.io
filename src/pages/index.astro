@@ -9,7 +9,6 @@ const allPosts = await getCollection("blog");
 const sortedPosts = allPosts
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-// Build tag list with counts
 const tagMap = new Map<string, number>();
 for (const post of allPosts) {
   for (const tag of post.data.tags) {
@@ -26,36 +25,79 @@ const tags = Array.from(tagMap.entries())
 
   <section id="posts" class="section">
     <div class="container">
-      <h2 class="section-title">Latest writing</h2>
-      <p class="section-subtitle">Thoughts on code, design, and the spaces in between.</p>
+      <div class="section-header reveal">
+        <h2 class="section-title">Latest writing</h2>
+        <p class="section-subtitle">Thoughts on code, design, and the spaces in between.</p>
+      </div>
 
-      {tags.length > 0 && <TagsBar tags={tags} activeTag="" />}
+      {tags.length > 0 && <div class="reveal"><TagsBar tags={tags} activeTag="" /></div>}
 
       {
         sortedPosts.length === 0 ? (
-          <div class="empty-state">
+          <div class="empty-state reveal">
             <p>No posts yet. Start writing in <code>src/content/blog/</code>.</p>
           </div>
         ) : (
-          <div class="blog-grid">
-            {sortedPosts.map((post) => (
-              <BlogCard
-                title={post.data.title}
-                description={post.data.description}
-                date={post.data.date.toISOString()}
-                slug={post.id}
-                readingTime={post.data.readingTime}
-                tags={post.data.tags}
-              />
-            ))}
-          </div>
+          <>
+            <!-- View toggle -->
+            <div class="view-toggle reveal" id="viewToggle">
+              <button class="view-btn active" data-view="grid" aria-label="Grid view" id="viewGridBtn">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="1" width="6" height="6" rx="1"/>
+                  <rect x="9" y="1" width="6" height="6" rx="1"/>
+                  <rect x="1" y="9" width="6" height="6" rx="1"/>
+                  <rect x="9" y="9" width="6" height="6" rx="1"/>
+                </svg>
+              </button>
+              <button class="view-btn" data-view="list" aria-label="List view" id="viewListBtn">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M2 8h12M2 12h12" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Grid view -->
+            <div class="blog-grid reveal-stagger" id="blogGrid">
+              {sortedPosts.map((post) => (
+                <BlogCard
+                  title={post.data.title}
+                  description={post.data.description}
+                  date={post.data.date.toISOString()}
+                  slug={post.id}
+                  readingTime={post.data.readingTime}
+                  tags={post.data.tags}
+                />
+              ))}
+            </div>
+
+            <!-- List view (hidden by default) -->
+            <div class="blog-list" id="blogList" style="display:none">
+              {sortedPosts.map((post) => (
+                <a href={`/blog/${post.id}`} class="blog-list-item">
+                  <span class="blog-list-date">
+                    {post.data.date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+                  </span>
+                  <div>
+                    <div class="blog-list-title">{post.data.title}</div>
+                    {post.data.tags.length > 0 && (
+                      <div class="blog-list-tags">
+                        {post.data.tags.map((tag) => (
+                          <span class="blog-list-tag">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </>
         )
       }
     </div>
   </section>
 
   <section id="about" class="section">
-    <div class="container">
+    <div class="container reveal">
       <h2 class="section-title">Hello World!</h2>
       <div class="about-content">
         <p>Hello! I'm a developer who loves building things for the web. This is my space to share ideas, document learnings, and connect with others.</p>
@@ -63,9 +105,62 @@ const tags = Array.from(tagMap.entries())
       </div>
     </div>
   </section>
+
+  <!-- Newsletter -->
+  <section class="section">
+    <div class="container reveal">
+      <div class="newsletter">
+        <h3 class="newsletter-title">Stay in the loop</h3>
+        <p class="newsletter-desc">Occasional updates about new posts and projects. No spam.</p>
+        <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Thanks for subscribing!'); this.reset();">
+          <input type="email" class="newsletter-input" placeholder="your@email.com" required />
+          <button type="submit" class="btn btn-primary">Subscribe</button>
+        </form>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
+<script>
+  // View toggle
+  (function() {
+    var gridBtn = document.getElementById("viewGridBtn");
+    var listBtn = document.getElementById("viewListBtn");
+    var grid = document.getElementById("blogGrid");
+    var list = document.getElementById("blogList");
+
+    if (!gridBtn || !listBtn || !grid || !list) return;
+
+    var view = localStorage.getItem("blogView") || "grid";
+    applyView(view);
+
+    gridBtn.addEventListener("click", function() { applyView("grid"); });
+    listBtn.addEventListener("click", function() { applyView("list"); });
+
+    function applyView(v) {
+      view = v;
+      localStorage.setItem("blogView", v);
+      grid.style.display = v === "grid" ? "" : "none";
+      list.style.display = v === "list" ? "" : "none";
+      gridBtn.classList.toggle("active", v === "grid");
+      listBtn.classList.toggle("active", v === "list");
+
+      // Re-init staggered reveal for grid view
+      if (v === "grid") {
+        grid.classList.remove("revealed");
+        requestAnimationFrame(function() {
+          grid.classList.add("revealed");
+        });
+      }
+    }
+  })();
+</script>
+
 <style>
+  .section-header {
+    margin-bottom: var(--space-xs);
+  }
+
   .empty-state {
     text-align: center;
     padding: var(--space-3xl) var(--space-xl);
