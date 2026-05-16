@@ -100,13 +100,26 @@
     overflow: hidden;
     cursor: default;
     margin: var(--space-2xl) 0;
-    /* warm gradient sampled from bg.png edges, replacing the original green */
     background: linear-gradient(
       180deg,
       #d6aa6a 0%,
       #cf9a5e 30%,
       #c8774b 70%,
       #b85a3d 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      black 12%,
+      black 88%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      black 12%,
+      black 88%,
+      transparent 100%
     );
   }
 
