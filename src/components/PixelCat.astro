@@ -2,8 +2,10 @@
   <!-- Idle -->
   <div class="pixelcat-idle" id="pixelcatIdle">
     <canvas id="idleCatCanvas" width="64" height="64" aria-label="Pixel cat"></canvas>
-    <span class="pixelcat-hint">Click the cat to play</span>
   </div>
+
+  <!-- Flying cat (during intro) -->
+  <canvas class="flying-cat" id="flyingCat" width="64" height="64" style="display:none" aria-hidden="true"></canvas>
 
   <!-- Game canvas (full-width, no border) -->
   <canvas class="pixelcat-canvas" id="gameCanvas" style="display:none" aria-label="Cat runner game"></canvas>
@@ -60,8 +62,9 @@
     var gameRunning = false, introRunning = false;
     var animId = null;
     var frameCount = 0;
-    var introLineX = 0;       // 0..1 animation progress
+    var introLineX = 0;
     var introDone = false;
+    var catLanded = false;   // true after fly animation completes
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -97,8 +100,9 @@
       var isDark = document.documentElement.getAttribute("data-theme") === "dark";
       ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.18)";
       ctx.fillRect(0, groundY, w, 2);
-      // Small cat waiting at left
-      drawCat(CAT_X, catY, CAT_W, CAT_H, 0);
+      if (catLanded) {
+        drawCat(CAT_X, catY, CAT_W, CAT_H, 0);
+      }
     }
 
     function drawObstacle(obs) {
@@ -174,19 +178,74 @@
       animId = requestAnimationFrame(gameLoop);
     }
 
+    var flyingCat = document.getElementById("flyingCat");
+    var flyingCtx = flyingCat ? flyingCat.getContext("2d") : null;
+
     function startGame() {
+      // Get idle cat screen position
+      var idleRect = idleCanvas.getBoundingClientRect();
+      var startX = idleRect.left;
+      var startY = idleRect.top;
+
+      // Draw idle cat onto flying canvas
+      if (flyingCtx) {
+        flyingCtx.clearRect(0, 0, 64, 64);
+        flyingCtx.drawImage(idleCanvas, 0, 0);
+      }
+
+      // Hide idle, show canvas + flying cat
       idleDiv.style.display = "none";
       canvas.style.display = "block";
       resize();
+
+      // Calculate target position on game canvas (screen coords)
+      var canvasRect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width / canvasRect.width;  // canvas pixels per CSS pixel
+      var scaleY = canvas.height / canvasRect.height;
+      var targetScreenX = canvasRect.left + CAT_X / scaleX;
+      var targetScreenY = canvasRect.top + (groundY - CAT_H) / scaleY;
+
+      // Position flying cat
+      flyingCat.style.display = "block";
+      flyingCat.style.position = "fixed";
+      flyingCat.style.left = startX + "px";
+      flyingCat.style.top = startY + "px";
+      flyingCat.style.width = "96px";
+      flyingCat.style.height = "96px";
+      flyingCat.style.zIndex = "200";
+      flyingCat.style.imageRendering = "pixelated";
+      flyingCat.style.pointerEvents = "none";
+      flyingCat.style.transform = "translate(0, 0) scale(1)";
+      flyingCat.style.transition = "none";
+
+      // Reset game state
       obstacles = []; score = 0; speed = 6;
       vy = 0; isJumping = false; catY = groundY - CAT_H;
       frameCount = 0; obstacleTimer = 0; nextObstacle = 70;
-      introLineX = 0; introDone = false; introRunning = true; gameRunning = false;
+      introLineX = 0; introDone = false; catLanded = false; introRunning = true; gameRunning = false;
       scoreEl.textContent = "0"; scoreEl.style.display = "none";
       gameOverOverlay.style.display = "none";
-      var rect = wrapper.getBoundingClientRect();
-      canvas.style.marginTop = (100 - rect.height) + "px";
+
+      // Start intro (draw the line extending)
       animId = requestAnimationFrame(gameLoop);
+
+      // Fly animation: move + shrink
+      requestAnimationFrame(function() {
+        var dx = targetScreenX - startX;
+        var dy = targetScreenY - startY;
+        flyingCat.style.transition = "transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+        flyingCat.style.left = targetScreenX + "px";
+        flyingCat.style.top = targetScreenY + "px";
+        flyingCat.style.transform = "scale(0.5)";
+        flyingCat.style.width = "48px";
+        flyingCat.style.height = "48px";
+      });
+
+      // After fly animation ends, hide flying cat and land cat on canvas
+      setTimeout(function() {
+        flyingCat.style.display = "none";
+        catLanded = true;
+      }, 460);
     }
 
     function endGame() {
