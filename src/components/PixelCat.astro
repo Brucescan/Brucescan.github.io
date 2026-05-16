@@ -1,12 +1,11 @@
 <div class="pixelcat-wrapper" id="pixelcatWrapper">
-  <!-- Idle -->
   <div class="pixelcat-idle" id="pixelcatIdle">
     <canvas id="idleCatCanvas" width="64" height="64" aria-label="Pixel cat"></canvas>
   </div>
 
-  <!-- Game canvas (full-width, no border) -->
   <canvas class="pixelcat-canvas" id="gameCanvas" style="display:none" aria-label="Cat runner game"></canvas>
   <div class="game-score" id="gameScore" style="display:none">0</div>
+  <div class="game-milestone" id="gameMilestone" style="display:none"></div>
   <div class="game-over-overlay" id="gameOverOverlay" style="display:none">
     <div class="game-over-card">
       <div class="game-over-title">Game Over</div>
@@ -25,6 +24,7 @@
     var idleCanvas = document.getElementById("idleCatCanvas");
     var idleCtx = idleCanvas ? idleCanvas.getContext("2d") : null;
     var scoreEl = document.getElementById("gameScore");
+    var milestoneEl = document.getElementById("gameMilestone");
     var gameOverOverlay = document.getElementById("gameOverOverlay");
     var finalScoreEl = document.getElementById("finalScore");
     var restartBtn = document.getElementById("restartBtn");
@@ -49,80 +49,308 @@
     }
     if (idleCtx) drawIdleCat();
 
-    // ── Game state ──
+    // ══════════════════════════════════════════
+    //  Game state
+    // ══════════════════════════════════════════
     var CAT_W = 48, CAT_H = 48, CAT_X = 100;
     var groundY, catY;
-    var vy = 0, gravity = 0.7, jumpForce = -12;
-    var isJumping = false;
+    var vy = 0, gravity = 0.55, jumpForce = -10;
+    var isJumping = false, jumpHeld = false, jumpHoldFrames = 0;
+    var isDucking = false;
+    var MAX_JUMP_HOLD = 10; // frames of reduced gravity while holding
+
     var obstacles = [];
-    var score = 0, speed = 6;
+    var score = 0, speed = 5;
     var gameRunning = false, introRunning = false;
     var animId = null;
     var frameCount = 0;
-    var introLineX = 0;
-    var introDone = false;
+    var introLineX = 0, introDone = false;
+
+    // Particles
+    var particles = [];
+    var dustParticles = [];
+
+    // Milestone
+    var milestoneTimer = 0;
+    var milestoneText = "";
+
+    // Score pops
+    var scorePops = [];
+
+    // Shake
+    var shakeX = 0, shakeY = 0, shakeFrames = 0;
+
+    // Death flash
+    var deathFlash = 0;
 
     function resize() {
       canvas.width = window.innerWidth;
-      canvas.height = 200;
+      canvas.height = 220;
       groundY = canvas.height * 0.72;
       catY = groundY - CAT_H;
     }
 
-    function drawCat(x, y, w, h, frame) {
-      var f = frame % 4;
-      ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.25, y+h*0.35, w*0.5, h*0.5);
-      ctx.fillStyle = "#ffbe76"; ctx.fillRect(x+w*0.2, y+h*0.05, w*0.6, h*0.35);
-      ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.2, y, w*0.15, h*0.18); ctx.fillRect(x+w*0.65, y, w*0.15, h*0.18);
-      ctx.fillStyle = "#2d3436"; ctx.fillRect(x+w*0.35, y+h*0.15, w*0.1, h*0.12); ctx.fillRect(x+w*0.55, y+h*0.15, w*0.1, h*0.12);
-      ctx.fillStyle = "#ffbe76";
-      if (f === 0 || f === 2) { ctx.fillRect(x+w*0.28, y+h*0.85, w*0.18, h*0.15); ctx.fillRect(x+w*0.55, y+h*0.85, w*0.18, h*0.15); }
-      else { ctx.fillRect(x+w*0.2, y+h*0.82, w*0.18, h*0.15); ctx.fillRect(x+w*0.6, y+h*0.82, w*0.18, h*0.15); }
-      ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.75, y+h*0.4, w*0.2, h*0.1);
-      if (f%2) ctx.fillRect(x+w*0.85, y+h*0.3, w*0.12, h*0.2);
+    // ── Draw cat ──
+    function drawCat(x, y, w, h, frame, ducking) {
+      ctx.save();
+      if (ducking) {
+        // Squished cat
+        var dh = h * 0.5;
+        var dy = y + h - dh;
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.25, dy+dh*0.3, w*0.5, dh*0.5);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(x+w*0.15, dy, w*0.7, dh*0.4);
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.15, dy-dh*0.15, w*0.12, dh*0.2); ctx.fillRect(x+w*0.73, dy-dh*0.15, w*0.12, dh*0.2);
+        ctx.fillStyle = "#2d3436"; ctx.fillRect(x+w*0.38, dy+dh*0.05, w*0.08, dh*0.14); ctx.fillRect(x+w*0.55, dy+dh*0.05, w*0.08, dh*0.14);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(x+w*0.25, dy+dh*0.8, w*0.2, dh*0.2); ctx.fillRect(x+w*0.55, dy+dh*0.8, w*0.2, dh*0.2);
+      } else {
+        var f = frame % 4;
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.25, y+h*0.35, w*0.5, h*0.5);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(x+w*0.2, y+h*0.05, w*0.6, h*0.35);
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.2, y, w*0.15, h*0.18); ctx.fillRect(x+w*0.65, y, w*0.15, h*0.18);
+        ctx.fillStyle = "#2d3436"; ctx.fillRect(x+w*0.35, y+h*0.15, w*0.1, h*0.12); ctx.fillRect(x+w*0.55, y+h*0.15, w*0.1, h*0.12);
+        ctx.fillStyle = "#ffbe76";
+        if (f === 0 || f === 2) { ctx.fillRect(x+w*0.28, y+h*0.85, w*0.18, h*0.15); ctx.fillRect(x+w*0.55, y+h*0.85, w*0.18, h*0.15); }
+        else { ctx.fillRect(x+w*0.2, y+h*0.82, w*0.18, h*0.15); ctx.fillRect(x+w*0.6, y+h*0.82, w*0.18, h*0.15); }
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.75, y+h*0.4, w*0.2, h*0.1);
+        if (f%2) ctx.fillRect(x+w*0.85, y+h*0.3, w*0.12, h*0.2);
+      }
+      ctx.restore();
     }
 
+    // ── Parallax background ──
+    function drawBackground() {
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      var darkness = Math.min(1, score / 500); // darkens as score rises
+
+      // Sky
+      var skyTop, skyBot;
+      if (isDark) {
+        skyTop = [20 + darkness*5, 22 + darkness*5, 28 + darkness*5];
+        skyBot = [45 + darkness*5, 47 + darkness*5, 52 + darkness*5];
+      } else {
+        skyTop = [200 - darkness*30, 210 - darkness*30, 220 - darkness*30];
+        skyBot = [160 - darkness*30, 170 - darkness*30, 180 - darkness*30];
+      }
+      var grad = ctx.createLinearGradient(0, 0, 0, groundY);
+      grad.addColorStop(0, "rgb("+skyTop.join(",")+")");
+      grad.addColorStop(1, "rgb("+skyBot.join(",")+")");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, groundY);
+
+      // Far mountains (slowest parallax)
+      var mtOffset = (frameCount * speed * 0.15) % 800;
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
+      ctx.beginPath();
+      for (var mx = -mtOffset; mx < canvas.width + 100; mx += 400) {
+        ctx.moveTo(mx, groundY);
+        ctx.lineTo(mx + 100, groundY - 60);
+        ctx.lineTo(mx + 200, groundY);
+      }
+      ctx.fill();
+
+      // Near hills (medium parallax)
+      var hlOffset = (frameCount * speed * 0.3) % 500;
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
+      ctx.beginPath();
+      for (var hx = -hlOffset; hx < canvas.width + 100; hx += 250) {
+        ctx.moveTo(hx, groundY);
+        ctx.lineTo(hx + 60, groundY - 35);
+        ctx.lineTo(hx + 120, groundY);
+      }
+      ctx.fill();
+    }
+
+    // ── Ground ──
     function drawGround() {
-      // Page-matching transparent — just the ground line
       var isDark = document.documentElement.getAttribute("data-theme") === "dark";
       ctx.fillStyle = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
       ctx.fillRect(0, groundY, canvas.width, 2);
-    }
 
-    function drawIntroLine() {
-      var w = canvas.width * introLineX;
-      if (w < 0) w = 0;
-      if (w > canvas.width) w = canvas.width;
-      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.18)";
-      ctx.fillRect(0, groundY, w, 2);
-      drawCat(CAT_X, catY, CAT_W, CAT_H, 0);
-    }
-
-    function drawObstacle(obs) {
-      ctx.fillStyle = "#636e72";
-      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-      // Spikes
-      ctx.fillStyle = "#b2bec3";
-      for (var sx = obs.x + 2; sx < obs.x + obs.w - 2; sx += 10) {
-        ctx.fillRect(sx, obs.y - 6, 6, 8);
+      // Scrolling ground dots
+      var offset = (frameCount * speed) % 35;
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+      for (var x = -offset; x < canvas.width; x += 35) {
+        ctx.fillRect(x, groundY + 3, 18, 2);
       }
     }
 
-    function spawnObstacle() {
-      var h = 28 + Math.random() * 38;
-      obstacles.push({ x: canvas.width, y: groundY - h, w: 18 + Math.random() * 20, h: h });
+    // ── Particles ──
+    function spawnTrailParticle() {
+      particles.push({
+        x: CAT_X + 10,
+        y: catY + CAT_H - 4,
+        vx: -Math.random() * 2 - 1,
+        vy: -Math.random() * 2,
+        life: 15 + Math.random() * 10,
+        size: 2 + Math.random() * 2
+      });
     }
 
-    var obstacleTimer = 0, nextObstacle = 70;
+    function spawnDustBurst() {
+      for (var i = 0; i < 8; i++) {
+        dustParticles.push({
+          x: CAT_X + CAT_W/2,
+          y: groundY,
+          vx: (Math.random() - 0.5) * 4,
+          vy: -Math.random() * 3 - 1,
+          life: 12 + Math.random() * 8,
+          size: 1 + Math.random() * 3
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      for (var i = dustParticles.length - 1; i >= 0; i--) {
+        var d = dustParticles[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy += 0.1;
+        d.life--;
+        if (d.life <= 0) dustParticles.splice(i, 1);
+      }
+    }
+
+    function drawParticles() {
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)";
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        ctx.globalAlpha = p.life / 25;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      }
+      ctx.globalAlpha = 1;
+      var dustColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.25)";
+      ctx.fillStyle = dustColor;
+      for (var j = 0; j < dustParticles.length; j++) {
+        var d = dustParticles[j];
+        ctx.globalAlpha = d.life / 20;
+        ctx.fillRect(d.x, d.y, d.size, d.size);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Obstacles ──
+    function spawnObstacle() {
+      var type = Math.random() < 0.3 ? "bird" : "cactus";
+      if (type === "bird") {
+        var birdY = groundY - 50 - Math.random() * 25;
+        obstacles.push({ type: "bird", x: canvas.width, y: birdY, w: 30, h: 16 });
+      } else {
+        var h = 30 + Math.random() * 42;
+        obstacles.push({ type: "cactus", x: canvas.width, y: groundY - h, w: 20 + Math.random() * 18, h: h });
+      }
+    }
+
+    function drawObstacle(obs) {
+      if (obs.type === "cactus") {
+        ctx.fillStyle = "#2d3436";
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        ctx.fillStyle = "#e17055";
+        for (var sx = obs.x; sx < obs.x + obs.w - 2; sx += 10) {
+          ctx.fillRect(sx, obs.y - 7, 7, 9);
+        }
+      } else {
+        // Bird
+        var bx = obs.x, by = obs.y;
+        var wing = Math.sin(frameCount * 0.3) * 4;
+        ctx.fillStyle = "#636e72";
+        ctx.fillRect(bx + 6, by + 4, 18, 8);
+        ctx.fillRect(bx + 2, by + 8, 26, 4);
+        // Wings
+        ctx.fillStyle = "#b2bec3";
+        ctx.fillRect(bx + 6, by - 4 + wing, 10, 8);
+        ctx.fillRect(bx + 14, by - 4 - wing, 10, 8);
+        // Eye
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(bx + 16, by + 5, 4, 4);
+        ctx.fillStyle = "#2d3436";
+        ctx.fillRect(bx + 18, by + 6, 2, 2);
+      }
+    }
+
+    // ── Collision ──
+    function checkCollision(obs) {
+      var cl = CAT_X + 6, cr = CAT_X + CAT_W - 6;
+      var ct, cb;
+      if (isDucking) {
+        ct = catY + CAT_H * 0.5 + 4;
+        cb = catY + CAT_H;
+      } else {
+        ct = catY + 6;
+        cb = catY + CAT_H - 4;
+      }
+      if (obs.type === "bird") {
+        // Duck to avoid; if not ducking, check collision
+        if (isDucking) return false;
+        return cr > obs.x + 4 && cl < obs.x + obs.w - 4 && cb > obs.y && ct < obs.y + obs.h;
+      }
+      return cr > obs.x + 3 && cl < obs.x + obs.w - 3 && cb > obs.y + 3 && ct < obs.y + obs.h;
+    }
+
+    // ── Score pop ──
+    function addScorePop() {
+      scorePops.push({ x: CAT_X + CAT_W, y: catY - 10, life: 30, text: "+10" });
+    }
+
+    function drawScorePops() {
+      ctx.fillStyle = "#fdcb6e";
+      ctx.font = "bold 14px monospace";
+      for (var i = scorePops.length - 1; i >= 0; i--) {
+        var sp = scorePops[i];
+        sp.y -= 1;
+        sp.life--;
+        ctx.globalAlpha = sp.life / 30;
+        ctx.fillText(sp.text, sp.x, sp.y);
+        if (sp.life <= 0) scorePops.splice(i, 1);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Milestone ──
+    function triggerMilestone(pts) {
+      milestoneText = pts + "!";
+      milestoneTimer = 50;
+      milestoneEl.textContent = milestoneText;
+      milestoneEl.style.display = "block";
+      milestoneEl.style.opacity = "1";
+      milestoneEl.style.transform = "translate(-50%, -50%) scale(1.4)";
+    }
+
+    function updateMilestone() {
+      if (milestoneTimer > 0) {
+        milestoneTimer--;
+        if (milestoneTimer < 20) {
+          milestoneEl.style.opacity = (milestoneTimer / 20).toString();
+        }
+        milestoneEl.style.transform = "translate(-50%, -50%) scale(" + (1 + milestoneTimer/50) + ")";
+        if (milestoneTimer === 0) {
+          milestoneEl.style.display = "none";
+        }
+      }
+    }
+
+    // ══════════════════════════════════════════
+    //  Game loop
+    // ══════════════════════════════════════════
+    var obstacleTimer = 0, nextObstacle = 80;
 
     function gameLoop() {
       if (!gameRunning && !introRunning) return;
 
+      // Intro: runway extending
       if (introRunning && !introDone) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
         drawIntroLine();
-        introLineX += 0.018;
+        drawCat(CAT_X, catY, CAT_W, CAT_H, 0, false);
+        introLineX += 0.02;
         if (introLineX >= 1) {
           introLineX = 1;
           introDone = true;
@@ -137,50 +365,125 @@
       if (!gameRunning) return;
       frameCount++;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Shake decay
+      if (shakeFrames > 0) {
+        shakeX = (Math.random() - 0.5) * shakeFrames * 1.2;
+        shakeY = (Math.random() - 0.5) * shakeFrames * 1.2;
+        shakeFrames--;
+      } else {
+        shakeX = 0; shakeY = 0;
+      }
+
+      // Death flash decay
+      if (deathFlash > 0) deathFlash--;
+
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+      ctx.clearRect(-10, -10, canvas.width + 20, canvas.height + 20);
+
+      drawBackground();
       drawGround();
 
-      // Cat
+      // Trail particles
+      if (frameCount % 3 === 0 && !isJumping) spawnTrailParticle();
+      updateParticles();
+      drawParticles();
+
+      // Cat physics (variable jump height)
       if (isJumping) {
         catY += vy;
-        vy += gravity;
-        if (catY >= groundY - CAT_H) { catY = groundY - CAT_H; vy = 0; isJumping = false; }
+        if (jumpHeld && jumpHoldFrames < MAX_JUMP_HOLD) {
+          vy += gravity * 0.4; // reduced gravity while holding
+          jumpHoldFrames++;
+        } else {
+          vy += gravity;
+        }
+        if (catY >= groundY - CAT_H) {
+          if (catY > groundY - CAT_H + 2) spawnDustBurst(); // landing dust
+          catY = groundY - CAT_H;
+          vy = 0;
+          isJumping = false;
+        }
       }
-      drawCat(CAT_X, catY, CAT_W, CAT_H, isJumping ? 0 : frameCount);
+
+      drawCat(CAT_X, catY, CAT_W, CAT_H, isJumping ? 0 : frameCount, isDucking);
 
       // Obstacles
       obstacleTimer++;
       if (obstacleTimer > nextObstacle) {
         spawnObstacle();
         obstacleTimer = 0;
-        nextObstacle = 40 + Math.floor(Math.random() * 55);
+        nextObstacle = 35 + Math.floor(Math.random() * 50) - Math.min(15, Math.floor(score / 40));
+        if (nextObstacle < 20) nextObstacle = 20;
       }
+
       for (var i = obstacles.length - 1; i >= 0; i--) {
         var obs = obstacles[i];
         obs.x -= speed;
         drawObstacle(obs);
-        var cl = CAT_X + 6, cr = CAT_X + CAT_W - 6;
-        var ct = catY + 6, cb = catY + CAT_H - 4;
-        if (cr > obs.x + 3 && cl < obs.x + obs.w - 3 && cb > obs.y + 3 && ct < obs.y + obs.h) {
-          endGame(); return;
+
+        if (checkCollision(obs)) {
+          endGame(); ctx.restore(); return;
         }
-        if (obs.x < -60) { obstacles.splice(i, 1); score += 10; speed = 6 + Math.floor(score/60); }
+
+        if (obs.x < -80) {
+          obstacles.splice(i, 1);
+          score += 10;
+          addScorePop();
+          // Milestone check
+          if (score % 100 === 0 && score > 0) triggerMilestone(score);
+          speed = 5 + score / 50;
+          if (speed > 16) speed = 16;
+        }
       }
 
+      // Score pops
+      drawScorePops();
+
+      // Update milestone
+      updateMilestone();
+
+      // Score
       scoreEl.textContent = score;
-      if (frameCount % 15 === 0) score += 1;
+      if (frameCount % 12 === 0) score += 1;
+
+      // Death flash overlay
+      if (deathFlash > 0) {
+        ctx.fillStyle = "rgba(255,50,50," + (deathFlash/15 * 0.4) + ")";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.restore();
       animId = requestAnimationFrame(gameLoop);
     }
 
+    function drawIntroLine() {
+      var w = canvas.width * introLineX;
+      if (w < 0) w = 0;
+      if (w > canvas.width) w = canvas.width;
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.18)";
+      ctx.fillRect(0, groundY, w, 2);
+    }
+
+    // ══════════════════════════════════════════
+    //  Game flow
+    // ══════════════════════════════════════════
     function startGame() {
       idleDiv.style.display = "none";
       canvas.style.display = "block";
       resize();
-      obstacles = []; score = 0; speed = 6;
-      vy = 0; isJumping = false; catY = groundY - CAT_H;
-      frameCount = 0; obstacleTimer = 0; nextObstacle = 70;
+      obstacles = []; particles = []; dustParticles = []; scorePops = [];
+      score = 0; speed = 5;
+      vy = 0; isJumping = false; isDucking = false;
+      jumpHeld = false; jumpHoldFrames = 0;
+      catY = groundY - CAT_H;
+      frameCount = 0; obstacleTimer = 0; nextObstacle = 80;
       introLineX = 0; introDone = false; introRunning = true; gameRunning = false;
+      milestoneTimer = 0;
+      shakeFrames = 0; deathFlash = 0;
       scoreEl.textContent = "0"; scoreEl.style.display = "none";
+      milestoneEl.style.display = "none";
       gameOverOverlay.style.display = "none";
       animId = requestAnimationFrame(gameLoop);
     }
@@ -188,6 +491,10 @@
     function endGame() {
       gameRunning = false; introRunning = false;
       if (animId) cancelAnimationFrame(animId);
+      shakeFrames = 20; // Start shake
+      deathFlash = 12;
+      // Render one last frame with shake
+      gameRunning = false;
       gameOverOverlay.style.display = "flex";
       finalScoreEl.textContent = score;
     }
@@ -197,22 +504,46 @@
       if (animId) cancelAnimationFrame(animId);
       canvas.style.display = "none";
       scoreEl.style.display = "none";
+      milestoneEl.style.display = "none";
       gameOverOverlay.style.display = "none";
       idleDiv.style.display = "inline-flex";
     }
 
     function jump() {
       if (!gameRunning) return;
-      if (!isJumping) { vy = jumpForce; isJumping = true; }
+      if (!isJumping) {
+        vy = jumpForce;
+        isJumping = true;
+        jumpHeld = true;
+        jumpHoldFrames = 0;
+      }
     }
 
     // ── Events ──
     idleDiv.addEventListener("click", startGame);
     canvas.addEventListener("click", jump);
+
     document.addEventListener("keydown", function(e) {
       if (!gameRunning) return;
-      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); jump(); }
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
+        e.preventDefault();
+        if (!isJumping) { vy = jumpForce; isJumping = true; jumpHeld = true; jumpHoldFrames = 0; }
+      }
+      if (e.code === "ArrowDown" || e.code === "KeyS") {
+        e.preventDefault();
+        isDucking = true;
+      }
     });
+
+    document.addEventListener("keyup", function(e) {
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
+        jumpHeld = false;
+      }
+      if (e.code === "ArrowDown" || e.code === "KeyS") {
+        isDucking = false;
+      }
+    });
+
     restartBtn.addEventListener("click", function(e) { e.stopPropagation(); restart(); });
     window.addEventListener("resize", function() { if (gameRunning || introRunning) resize(); });
   })();
@@ -264,6 +595,19 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .game-milestone {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 60;
+    font-size: 3rem;
+    font-weight: 900;
+    color: #fdcb6e;
+    font-family: var(--font-mono);
+    pointer-events: none;
+    text-shadow: 0 2px 20px rgba(253,203,110,0.5);
+  }
+
   .game-over-overlay {
     position: fixed;
     inset: 0;
@@ -313,16 +657,12 @@
     background: var(--color-text);
     color: var(--color-bg);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-    overflow: hidden;
   }
 
   .game-restart-btn:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   }
 
-  .game-restart-btn:active {
-    transform: scale(0.97);
-  }
+  .game-restart-btn:active { transform: scale(0.97); }
 </style>
