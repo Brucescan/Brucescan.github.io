@@ -3,100 +3,105 @@
   id="bilibiliBanner"
   aria-hidden="true"
 >
-  <div class="bilibili-layer" data-blur="4" data-level="60">
+  <div class="bilibili-layer" data-depth="6">
     <img src="/images/bilibili/bg.png" alt="" width="3000" height="250" />
   </div>
-  <div class="bilibili-layer" data-blur="0" data-level="50">
-    <img src="/images/bilibili/girl1.png" alt="" width="1800" height="165" id="girlImg" />
+  <div class="bilibili-layer" data-depth="5">
+    <img src="/images/bilibili/girl1.png" alt="" width="3000" height="275" id="girlImg" />
   </div>
-  <div class="bilibili-layer" data-blur="1" data-level="40">
+  <div class="bilibili-layer" data-depth="4">
     <img src="/images/bilibili/grassland.png" alt="" width="3000" height="250" />
   </div>
-  <div class="bilibili-layer" data-blur="4" data-level="30">
-    <img src="/images/bilibili/mushroom.png" alt="" width="1800" height="160" />
+  <div class="bilibili-layer" data-depth="3">
+    <img src="/images/bilibili/mushroom.png" alt="" width="3000" height="250" />
   </div>
-  <div class="bilibili-layer" data-blur="5" data-level="20">
-    <img src="/images/bilibili/spirit.png" alt="" width="1800" height="165" />
+  <div class="bilibili-layer" data-depth="2">
+    <img src="/images/bilibili/spirit.png" alt="" width="3000" height="275" />
   </div>
-  <div class="bilibili-layer" data-blur="6" data-level="10">
-    <img src="/images/bilibili/leaf.png" alt="" width="1950" height="178" />
+  <div class="bilibili-layer" data-depth="1">
+    <img src="/images/bilibili/leaf.png" alt="" width="3000" height="275" />
   </div>
 </div>
 
 <script>
   (function() {
     var banner = document.getElementById("bilibiliBanner");
-    var layers = banner ? banner.querySelectorAll(".bilibili-layer") : [];
+    if (!banner) return;
+    var layers = banner.querySelectorAll(".bilibili-layer");
     var girlImg = document.getElementById("girlImg");
-    if (!banner || layers.length === 0) return;
+    if (layers.length === 0) return;
 
-    var baseBlur = [];
-    var levels = [];
-    layers.forEach(function(l) {
-      baseBlur.push(parseFloat(l.getAttribute("data-blur")) || 0);
-      levels.push(parseFloat(l.getAttribute("data-level")) || 10);
-    });
+    // base blur per layer (matches original B站: deeper = more blur)
+    var baseBlur = [4, 0, 1, 4, 5, 6];
 
-    var windowWidth = document.documentElement.clientWidth;
-    var step = windowWidth / 2 / 5;
+    // ── Position-based parallax (visible at all times) ──
+    function applyParallax(mouseX) {
+      var rect = banner.getBoundingClientRect();
+      // -1 (left edge) to 1 (right edge)
+      var ratio = ((mouseX - rect.left) / rect.width) * 2 - 1;
 
-    window.addEventListener("resize", function() {
-      windowWidth = document.documentElement.clientWidth;
-      step = windowWidth / 2 / 5;
-    });
-
-    function init() {
       layers.forEach(function(l, i) {
-        l.style.transition = "0.2s linear";
-        l.style.transform = "translate(0px)";
-        l.style.filter = "blur(" + baseBlur[i] + "px)";
+        var depth = parseInt(l.getAttribute("data-depth")) || 1;
+        // deeper layers (higher depth) move less
+        var maxShift = 60; // px
+        var shift = -ratio * maxShift / depth;
+        l.style.transform = "translateX(" + shift + "px)";
+        l.style.filter = "blur(" + Math.abs(baseBlur[i] + ratio * 2) + "px)";
       });
     }
 
-    var prevX = 0;
-
-    banner.addEventListener("mouseover", function(e) {
-      prevX = e.clientX;
+    banner.addEventListener("mousemove", function(e) {
+      applyParallax(e.clientX);
     });
 
-    banner.addEventListener("mousemove", function(e) {
-      var xNew = e.clientX;
-      var xOffset = prevX - xNew;
-      prevX = xNew;
-
+    banner.addEventListener("mouseleave", function() {
       layers.forEach(function(l, i) {
-        var bNew = Math.abs(baseBlur[i] + (xOffset / step));
-        var lNew = 0 - (xOffset / levels[i]);
-        l.style.transition = "none";
-        l.style.transform = "translate(" + lNew + "px)";
-        l.style.filter = "blur(" + bNew + "px)";
+        l.style.transition = "transform 0.5s ease, filter 0.5s ease";
+        l.style.transform = "translateX(0px)";
+        l.style.filter = "blur(" + baseBlur[i] + "px)";
       });
     });
 
-    banner.addEventListener("mouseout", function() {
-      init();
+    banner.addEventListener("mouseenter", function() {
+      layers.forEach(function(l) {
+        l.style.transition = "none";
+      });
+    });
+
+    // ── Init ──
+    layers.forEach(function(l, i) {
+      l.style.filter = "blur(" + baseBlur[i] + "px)";
     });
 
     // ── Girl blink ──
-    var blinkIndex = 0;
-    var blinkTimeout = 4000;
+    if (girlImg) {
+      var blinkFrames = [1, 2, 3, 4, 3, 2]; // blink cycle
+      var frameIdx = 0;
+      var blinkActive = false;
 
-    function blink() {
-      if (blinkIndex === 4) {
-        blinkIndex = 1;
-        blinkTimeout = 4000;
-      } else {
-        blinkIndex += 1;
-        blinkTimeout = 30;
+      function blinkStep() {
+        if (!blinkActive) {
+          // Start blink
+          blinkActive = true;
+          frameIdx = 1;
+          girlImg.src = "/images/bilibili/girl" + blinkFrames[frameIdx] + ".png";
+          setTimeout(blinkStep, 60);
+        } else if (frameIdx < blinkFrames.length - 1) {
+          frameIdx++;
+          girlImg.src = "/images/bilibili/girl" + blinkFrames[frameIdx] + ".png";
+          setTimeout(blinkStep, 60);
+        } else {
+          // Blink done, back to open eyes
+          girlImg.src = "/images/bilibili/girl1.png";
+          blinkActive = false;
+          // Wait 3-5 seconds before next blink
+          setTimeout(blinkStep, 3000 + Math.random() * 2000);
+        }
       }
-      if (girlImg) {
-        girlImg.src = "/images/bilibili/girl" + blinkIndex + ".png";
-      }
-      setTimeout(blink, blinkTimeout);
+
+      // Initial delay before first blink
+      setTimeout(blinkStep, 3000);
     }
-
-    init();
-    blink();
   })();
 </script>
 
@@ -106,9 +111,16 @@
     width: 100vw;
     height: 155px;
     overflow: hidden;
-    background: #00b894;
     cursor: default;
     margin: var(--space-2xl) 0;
+    /* Warm gradient matching bg.png edge colors */
+    background: linear-gradient(
+      180deg,
+      #d6aa6a 0%,
+      #cf9a5e 20%,
+      #c8774b 80%,
+      #b85a3d 100%
+    );
   }
 
   .bilibili-layer {
@@ -118,10 +130,21 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    will-change: transform;
   }
 
   .bilibili-layer img {
     display: block;
     flex-shrink: 0;
+    height: 100%;
+    width: auto;
+    min-width: 150%;
+  }
+
+  @media (max-width: 768px) {
+    .bilibili-banner {
+      height: 100px;
+      margin: var(--space-xl) 0;
+    }
   }
 </style>
