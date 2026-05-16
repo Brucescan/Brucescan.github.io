@@ -7,13 +7,7 @@ const currentPath = Astro.url.pathname;
 <header class="header">
   <div class="header-inner container">
     <a href="/" class="logo">
-      <span class="logo-icon" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
-          <rect width="64" height="64" rx="16" fill="currentColor"/>
-          <path d="M20 42V22L44 32L20 42Z" fill="white"/>
-        </svg>
-      </span>
-      <span class="logo-text">{site.title.split(" ")[0]}</span>
+      <span class="logo-text">Brucescan</span>
     </a>
 
     <div class="header-actions">
@@ -157,12 +151,6 @@ const currentPath = Astro.url.pathname;
 
   .logo:hover {
     opacity: 0.8;
-    color: var(--color-text);
-  }
-
-  .logo-icon {
-    display: flex;
-    align-items: center;
     color: var(--color-text);
   }
 
