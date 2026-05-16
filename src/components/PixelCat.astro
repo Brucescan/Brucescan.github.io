@@ -61,6 +61,7 @@
 
     var obstacles = [];
     var score = 0, speed = 5;
+    var mtScroll = 0, hlScroll = 0, groundScroll = 0;
     var gameRunning = false, introRunning = false;
     var animId = null;
     var frameCount = 0;
@@ -85,6 +86,7 @@
 
     function resize() {
       canvas.width = window.innerWidth;
+      canvas.style.width = window.innerWidth + "px";
       canvas.height = 220;
       groundY = canvas.height * 0.72;
       catY = groundY - CAT_H;
@@ -117,33 +119,8 @@
       ctx.restore();
     }
 
-    // Pre-rendered mountain patterns (drawn once, scrolled via drawImage)
-    var mtCanvas = null, hlCanvas = null;
-    var lastDark = null;
-
-    function buildBgPatterns(isDark) {
-      var w = 400, h = 70;
-      mtCanvas = document.createElement("canvas");
-      mtCanvas.width = w; mtCanvas.height = h;
-      var mc = mtCanvas.getContext("2d");
-      mc.fillStyle = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
-      mc.beginPath();
-      mc.moveTo(0, h); mc.lineTo(100, h-60); mc.lineTo(200, h); mc.lineTo(300, h-60); mc.lineTo(w, h);
-      mc.fill();
-
-      w = 250; h = 45;
-      hlCanvas = document.createElement("canvas");
-      hlCanvas.width = w; hlCanvas.height = h;
-      var hc = hlCanvas.getContext("2d");
-      hc.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
-      hc.beginPath();
-      hc.moveTo(0, h); hc.lineTo(60, h-35); hc.lineTo(120, h); hc.lineTo(185, h-35); hc.lineTo(w, h);
-      hc.fill();
-    }
-
     function drawBackground() {
       var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      if (!mtCanvas || lastDark !== isDark) { buildBgPatterns(isDark); lastDark = isDark; }
 
       var darkness = Math.min(1, score / 500);
       var skyTop, skyBot;
@@ -160,18 +137,32 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, groundY);
 
-      // Far mountains — tile the pre-rendered pattern
-      var mtOff = (frameCount * speed * 0.15) % 400;
+      // Far mountains
+      var mtOff = mtScroll % 400;
       var mtW = 400, mtH = 70;
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
       for (var mx = -mtOff - mtW; mx < canvas.width + mtW; mx += mtW) {
-        ctx.drawImage(mtCanvas, Math.round(mx), groundY - mtH, mtW, mtH);
+        ctx.beginPath();
+        ctx.moveTo(mx, groundY);
+        ctx.lineTo(mx + 100, groundY - 60);
+        ctx.lineTo(mx + 200, groundY);
+        ctx.lineTo(mx + 300, groundY - 60);
+        ctx.lineTo(mx + mtW, groundY);
+        ctx.fill();
       }
 
       // Near hills
-      var hlOff = (frameCount * speed * 0.3) % 250;
+      var hlOff = hlScroll % 250;
       var hlW = 250, hlH = 45;
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
       for (var hx = -hlOff - hlW; hx < canvas.width + hlW; hx += hlW) {
-        ctx.drawImage(hlCanvas, Math.round(hx), groundY - hlH, hlW, hlH);
+        ctx.beginPath();
+        ctx.moveTo(hx, groundY);
+        ctx.lineTo(hx + 60, groundY - 35);
+        ctx.lineTo(hx + 120, groundY);
+        ctx.lineTo(hx + 185, groundY - 35);
+        ctx.lineTo(hx + hlW, groundY);
+        ctx.fill();
       }
     }
 
@@ -182,7 +173,7 @@
       ctx.fillRect(0, groundY, canvas.width, 2);
 
       // Scrolling ground dots
-      var offset = (frameCount * speed) % 35;
+      var offset = groundScroll % 35;
       ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
       for (var x = -offset; x < canvas.width; x += 35) {
         ctx.fillRect(x, groundY + 3, 18, 2);
@@ -261,6 +252,15 @@
         var h = 30 + Math.random() * 42;
         obstacles.push({ type: "cactus", x: canvas.width, y: groundY - h, w: 20 + Math.random() * 18, h: h });
       }
+
+      // Set spacing — extra gap when type switches (player needs time to change stance)
+      var gap = 35 + Math.floor(Math.random() * 50) - Math.min(15, Math.floor(score / 40));
+      if (lastObstacleType && type !== lastObstacleType) {
+        gap += 28;
+      }
+      if (gap < 20) gap = 20;
+      nextObstacle = gap;
+      lastObstacleType = type;
     }
 
     function drawObstacle(obs) {
@@ -355,6 +355,7 @@
     //  Game loop
     // ══════════════════════════════════════════
     var obstacleTimer = 0, nextObstacle = 80;
+    var lastObstacleType = null;
 
     function gameLoop() {
       if (!gameRunning && !introRunning) return;
@@ -379,6 +380,9 @@
 
       if (!gameRunning) return;
       frameCount++;
+      mtScroll += speed * 0.15;
+      hlScroll += speed * 0.3;
+      groundScroll += speed;
 
       // Shake decay
       if (shakeFrames > 0) {
@@ -428,8 +432,6 @@
       if (obstacleTimer > nextObstacle) {
         spawnObstacle();
         obstacleTimer = 0;
-        nextObstacle = 35 + Math.floor(Math.random() * 50) - Math.min(15, Math.floor(score / 40));
-        if (nextObstacle < 20) nextObstacle = 20;
       }
 
       for (var i = obstacles.length - 1; i >= 0; i--) {
@@ -489,11 +491,12 @@
       canvas.style.display = "block";
       resize();
       obstacles = []; particles = []; dustParticles = []; scorePops = [];
-      score = 0; speed = 5;
+      score = 0; speed = 5; lastObstacleType = null;
       vy = 0; isJumping = false; isDucking = false;
       jumpHeld = false; jumpHoldFrames = 0;
       catY = groundY - CAT_H;
       frameCount = 0; obstacleTimer = 0; nextObstacle = 80;
+      mtScroll = 0; hlScroll = 0; groundScroll = 0;
       introLineX = 0; introDone = false; introRunning = true; gameRunning = false;
       milestoneTimer = 0;
       shakeFrames = 0; deathFlash = 0;
@@ -592,7 +595,6 @@
 
   .pixelcat-canvas {
     display: block;
-    width: 100vw;
     margin-left: calc(-50vw + 50%);
     image-rendering: auto;
     cursor: pointer;
