@@ -137,22 +137,26 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, groundY);
 
-      // Far mountains (slowest parallax)
-      var mtOffset = (frameCount * speed * 0.15) % 800;
+      // Far mountains — continuous scroll, wrap at spacing
+      var mtSpacing = 400;
+      var mtOffset = frameCount * speed * 0.15;
+      var mtStart = -(mtOffset % mtSpacing);
       ctx.fillStyle = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
       ctx.beginPath();
-      for (var mx = -mtOffset; mx < canvas.width + 100; mx += 400) {
+      for (var mx = mtStart - mtSpacing; mx < canvas.width + mtSpacing; mx += mtSpacing) {
         ctx.moveTo(mx, groundY);
         ctx.lineTo(mx + 100, groundY - 60);
         ctx.lineTo(mx + 200, groundY);
       }
       ctx.fill();
 
-      // Near hills (medium parallax)
-      var hlOffset = (frameCount * speed * 0.3) % 500;
+      // Near hills — continuous scroll, wrap at spacing
+      var hlSpacing = 250;
+      var hlOffset = frameCount * speed * 0.3;
+      var hlStart = -(hlOffset % hlSpacing);
       ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
       ctx.beginPath();
-      for (var hx = -hlOffset; hx < canvas.width + 100; hx += 250) {
+      for (var hx = hlStart - hlSpacing; hx < canvas.width + hlSpacing; hx += hlSpacing) {
         ctx.moveTo(hx, groundY);
         ctx.lineTo(hx + 60, groundY - 35);
         ctx.lineTo(hx + 120, groundY);
