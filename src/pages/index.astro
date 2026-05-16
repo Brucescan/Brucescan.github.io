@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
-import WaterWave from "../components/WaterWave.astro";
+import AmbientGlow from "../components/AmbientGlow.astro";
 import BilibiliBanner from "../components/BilibiliBanner.astro";
 import PixelCat from "../components/PixelCat.astro";
 import BlogCard from "../components/BlogCard.astro";
@@ -31,13 +31,11 @@ const tags = Array.from(tagMap.entries())
 ---
 
 <BaseLayout>
+  <AmbientGlow />
+
   <Hero />
 
-  <WaterWave height={90} rows={4} intensity={1} />
-
   <BilibiliBanner />
-
-  <WaterWave height={70} rows={3} intensity={0.7} />
 
   <section id="posts" class="section">
     <div class="container">
@@ -112,8 +110,6 @@ const tags = Array.from(tagMap.entries())
     </div>
   </section>
 
-  <WaterWave height={80} rows={4} intensity={0.8} />
-
   <section id="about" class="section">
     <div class="container reveal">
       <h2 class="section-title">Hello World!</h2>
@@ -123,8 +119,6 @@ const tags = Array.from(tagMap.entries())
       </div>
     </div>
   </section>
-
-  <WaterWave height={65} rows={3} intensity={0.6} />
 
   <section class="section" style="padding-top:0">
     <div class="container reveal">

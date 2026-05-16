@@ -1,0 +1,133 @@
+<canvas class="ambient-glow-canvas" id="ambientGlowCanvas" aria-hidden="true"></canvas>
+
+<script>
+  (function() {
+    var canvas = document.getElementById("ambientGlowCanvas");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    var animId = null;
+    var halos = [];
+    var spawnTimer = 0;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Halo colors — warm golden hues for light, cool blue for dark
+    var lightColors = [
+      { r: 0, g: 113, b: 227 },    // accent blue
+      { r: 100, g: 100, b: 255 },   // soft purple
+      { r: 255, g: 159, b: 67 },    // warm orange
+    ];
+    var darkColors = [
+      { r: 41, g: 151, b: 255 },    // accent blue
+      { r: 130, g: 130, b: 255 },   // soft purple
+      { r: 255, g: 120, b: 160 },   // soft pink
+    ];
+
+    function resize() {
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+    }
+
+    function spawnHalo() {
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      var colors = isDark ? darkColors : lightColors;
+      var color = colors[Math.floor(Math.random() * colors.length)];
+
+      halos.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        radius: 120 + Math.random() * 280,
+        color: color,
+        maxAlpha: 0.03 + Math.random() * 0.05,
+        alpha: 0,
+        phase: "fadeIn", // fadeIn | hold | fadeOut
+        fadeInSpeed: 0.003 + Math.random() * 0.005,
+        fadeOutSpeed: 0.002 + Math.random() * 0.003,
+        holdTime: 0,
+        holdDuration: 80 + Math.random() * 160, // frames
+        driftX: (Math.random() - 0.5) * 0.3,
+        driftY: (Math.random() - 0.5) * 0.3,
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update spawn timer
+      spawnTimer++;
+      var spawnInterval = 120 + Math.random() * 200; // ~2-5 seconds
+      if (spawnTimer > spawnInterval && halos.length < 5) {
+        spawnTimer = 0;
+        spawnHalo();
+      }
+
+      // Draw and update each halo
+      for (var i = halos.length - 1; i >= 0; i--) {
+        var h = halos[i];
+
+        // Lifecycle
+        if (h.phase === "fadeIn") {
+          h.alpha += h.fadeInSpeed;
+          if (h.alpha >= h.maxAlpha) {
+            h.alpha = h.maxAlpha;
+            h.phase = "hold";
+          }
+        } else if (h.phase === "hold") {
+          h.holdTime++;
+          if (h.holdTime >= h.holdDuration) {
+            h.phase = "fadeOut";
+          }
+        } else if (h.phase === "fadeOut") {
+          h.alpha -= h.fadeOutSpeed;
+          if (h.alpha <= 0) {
+            halos.splice(i, 1);
+            continue;
+          }
+        }
+
+        // Drift
+        h.x += h.driftX;
+        h.y += h.driftY;
+
+        // Draw radial gradient
+        var r = h.radius * dpr;
+        var grad = ctx.createRadialGradient(
+          h.x * dpr, h.y * dpr, 0,
+          h.x * dpr, h.y * dpr, r
+        );
+        var c = h.color;
+        grad.addColorStop(0, "rgba(" + c.r + "," + c.g + "," + c.b + "," + h.alpha + ")");
+        grad.addColorStop(0.4, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (h.alpha * 0.6) + ")");
+        grad.addColorStop(1, "rgba(" + c.r + "," + c.g + "," + c.b + ",0)");
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Ensure minimum halos
+      if (halos.length === 0) {
+        spawnHalo();
+        spawnHalo();
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+
+    window.addEventListener("resize", resize);
+  })();
+</script>
+
+<style>
+  .ambient-glow-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+</style>
