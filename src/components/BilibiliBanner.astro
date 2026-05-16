@@ -73,7 +73,6 @@
 
     function doBlink() {
       if (!girlImg) return;
-      // Blink sequence: girl2(60ms) → girl3(60ms) → girl4(60ms) → girl1
       girlImg.src = "/images/bilibili/girl2.png";
       setTimeout(function() {
         girlImg.src = "/images/bilibili/girl3.png";
@@ -81,14 +80,17 @@
           girlImg.src = "/images/bilibili/girl4.png";
           setTimeout(function() {
             girlImg.src = "/images/bilibili/girl1.png";
-          }, 60);
-        }, 60);
-      }, 60);
+          }, 100);
+        }, 100);
+      }, 100);
     }
 
     init();
-    doBlink();
-    setInterval(doBlink, 2000);
+    // First blink after 1s delay, then every 2s
+    setTimeout(function() {
+      doBlink();
+      setInterval(doBlink, 2000);
+    }, 1000);
   })();
 </script>
 
