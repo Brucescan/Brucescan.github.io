@@ -70,25 +70,25 @@
     });
 
     var girlImg = document.getElementById("girlImg");
-    var blink_index = 0;
-    var blink_timeout = 4000;
 
-    function blink() {
-      if (blink_index === 4) {
-        blink_index = 1;
-        blink_timeout = 4000;
-      } else {
-        blink_index += 1;
-        blink_timeout = 30;
-      }
-      if (girlImg) {
-        girlImg.src = "/images/bilibili/girl" + blink_index + ".png";
-      }
-      setTimeout(blink, blink_timeout);
+    function doBlink() {
+      if (!girlImg) return;
+      // Blink sequence: girl2(60ms) → girl3(60ms) → girl4(60ms) → girl1
+      girlImg.src = "/images/bilibili/girl2.png";
+      setTimeout(function() {
+        girlImg.src = "/images/bilibili/girl3.png";
+        setTimeout(function() {
+          girlImg.src = "/images/bilibili/girl4.png";
+          setTimeout(function() {
+            girlImg.src = "/images/bilibili/girl1.png";
+          }, 60);
+        }, 60);
+      }, 60);
     }
 
     init();
-    blink();
+    doBlink();
+    setInterval(doBlink, 2000);
   })();
 </script>
 
