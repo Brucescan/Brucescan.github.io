@@ -117,19 +117,42 @@
       ctx.restore();
     }
 
-    // ── Parallax background ──
+    // Pre-rendered mountain patterns (drawn once, scrolled via drawImage)
+    var mtCanvas = null, hlCanvas = null;
+    var lastDark = null;
+
+    function buildBgPatterns(isDark) {
+      var w = 400, h = 70;
+      mtCanvas = document.createElement("canvas");
+      mtCanvas.width = w; mtCanvas.height = h;
+      var mc = mtCanvas.getContext("2d");
+      mc.fillStyle = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
+      mc.beginPath();
+      mc.moveTo(0, h); mc.lineTo(100, h-60); mc.lineTo(200, h); mc.lineTo(300, h-60); mc.lineTo(w, h);
+      mc.fill();
+
+      w = 250; h = 45;
+      hlCanvas = document.createElement("canvas");
+      hlCanvas.width = w; hlCanvas.height = h;
+      var hc = hlCanvas.getContext("2d");
+      hc.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
+      hc.beginPath();
+      hc.moveTo(0, h); hc.lineTo(60, h-35); hc.lineTo(120, h); hc.lineTo(185, h-35); hc.lineTo(w, h);
+      hc.fill();
+    }
+
     function drawBackground() {
       var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      var darkness = Math.min(1, score / 500); // darkens as score rises
+      if (!mtCanvas || lastDark !== isDark) { buildBgPatterns(isDark); lastDark = isDark; }
 
-      // Sky
+      var darkness = Math.min(1, score / 500);
       var skyTop, skyBot;
       if (isDark) {
-        skyTop = [20 + darkness*5, 22 + darkness*5, 28 + darkness*5];
-        skyBot = [45 + darkness*5, 47 + darkness*5, 52 + darkness*5];
+        skyTop = [20+darkness*5, 22+darkness*5, 28+darkness*5];
+        skyBot = [45+darkness*5, 47+darkness*5, 52+darkness*5];
       } else {
-        skyTop = [200 - darkness*30, 210 - darkness*30, 220 - darkness*30];
-        skyBot = [160 - darkness*30, 170 - darkness*30, 180 - darkness*30];
+        skyTop = [200-darkness*30, 210-darkness*30, 220-darkness*30];
+        skyBot = [160-darkness*30, 170-darkness*30, 180-darkness*30];
       }
       var grad = ctx.createLinearGradient(0, 0, 0, groundY);
       grad.addColorStop(0, "rgb("+skyTop.join(",")+")");
@@ -137,31 +160,19 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, groundY);
 
-      // Far mountains — continuous scroll, wrap at spacing
-      var mtSpacing = 400;
-      var mtOffset = frameCount * speed * 0.15;
-      var mtStart = -(mtOffset % mtSpacing);
-      ctx.fillStyle = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)";
-      ctx.beginPath();
-      for (var mx = mtStart - mtSpacing; mx < canvas.width + mtSpacing; mx += mtSpacing) {
-        ctx.moveTo(mx, groundY);
-        ctx.lineTo(mx + 100, groundY - 60);
-        ctx.lineTo(mx + 200, groundY);
+      // Far mountains — tile the pre-rendered pattern
+      var mtOff = (frameCount * speed * 0.15) % 400;
+      var mtW = 400, mtH = 70;
+      for (var mx = -mtOff - mtW; mx < canvas.width + mtW; mx += mtW) {
+        ctx.drawImage(mtCanvas, Math.round(mx), groundY - mtH, mtW, mtH);
       }
-      ctx.fill();
 
-      // Near hills — continuous scroll, wrap at spacing
-      var hlSpacing = 250;
-      var hlOffset = frameCount * speed * 0.3;
-      var hlStart = -(hlOffset % hlSpacing);
-      ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
-      ctx.beginPath();
-      for (var hx = hlStart - hlSpacing; hx < canvas.width + hlSpacing; hx += hlSpacing) {
-        ctx.moveTo(hx, groundY);
-        ctx.lineTo(hx + 60, groundY - 35);
-        ctx.lineTo(hx + 120, groundY);
+      // Near hills
+      var hlOff = (frameCount * speed * 0.3) % 250;
+      var hlW = 250, hlH = 45;
+      for (var hx = -hlOff - hlW; hx < canvas.width + hlW; hx += hlW) {
+        ctx.drawImage(hlCanvas, Math.round(hx), groundY - hlH, hlW, hlH);
       }
-      ctx.fill();
     }
 
     // ── Ground ──
