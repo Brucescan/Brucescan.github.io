@@ -39,17 +39,17 @@
       halos.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        radius: 120 + Math.random() * 280,
+        radius: 180 + Math.random() * 400,
         color: color,
-        maxAlpha: 0.03 + Math.random() * 0.05,
+        maxAlpha: 0.06 + Math.random() * 0.08,
         alpha: 0,
         phase: "fadeIn", // fadeIn | hold | fadeOut
-        fadeInSpeed: 0.003 + Math.random() * 0.005,
-        fadeOutSpeed: 0.002 + Math.random() * 0.003,
+        fadeInSpeed: 0.005 + Math.random() * 0.008,
+        fadeOutSpeed: 0.003 + Math.random() * 0.005,
         holdTime: 0,
-        holdDuration: 80 + Math.random() * 160, // frames
-        driftX: (Math.random() - 0.5) * 0.3,
-        driftY: (Math.random() - 0.5) * 0.3,
+        holdDuration: 100 + Math.random() * 200, // frames
+        driftX: (Math.random() - 0.5) * 0.5,
+        driftY: (Math.random() - 0.5) * 0.5,
       });
     }
 
@@ -58,8 +58,8 @@
 
       // Update spawn timer
       spawnTimer++;
-      var spawnInterval = 120 + Math.random() * 200; // ~2-5 seconds
-      if (spawnTimer > spawnInterval && halos.length < 5) {
+      var spawnInterval = 50 + Math.random() * 130; // ~0.8-3 seconds
+      if (spawnTimer > spawnInterval && halos.length < 8) {
         spawnTimer = 0;
         spawnHalo();
       }
