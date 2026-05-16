@@ -61,7 +61,6 @@
     var frameCount = 0;
     var introLineX = 0;
     var introDone = false;
-    var catLanded = false;   // true after fly animation completes
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -97,9 +96,7 @@
       var isDark = document.documentElement.getAttribute("data-theme") === "dark";
       ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.18)";
       ctx.fillRect(0, groundY, w, 2);
-      if (catLanded) {
-        drawCat(CAT_X, catY, CAT_W, CAT_H, 0);
-      }
+      drawCat(CAT_X, catY, CAT_W, CAT_H, 0);
     }
 
     function drawObstacle(obs) {
@@ -176,70 +173,16 @@
     }
 
     function startGame() {
-      // Get idle canvas current position and convert to fixed
-      var idleRect = idleCanvas.getBoundingClientRect();
-      var startX = idleRect.left;
-      var startY = idleRect.top;
-
-      // Show game canvas, init game state
+      idleDiv.style.display = "none";
       canvas.style.display = "block";
       resize();
       obstacles = []; score = 0; speed = 6;
       vy = 0; isJumping = false; catY = groundY - CAT_H;
       frameCount = 0; obstacleTimer = 0; nextObstacle = 70;
-      introLineX = 0; introDone = false; catLanded = false; introRunning = true; gameRunning = false;
+      introLineX = 0; introDone = false; introRunning = true; gameRunning = false;
       scoreEl.textContent = "0"; scoreEl.style.display = "none";
       gameOverOverlay.style.display = "none";
-
-      // Start runway line extending
       animId = requestAnimationFrame(gameLoop);
-
-      // Pin idle canvas to fixed position, then fly it to target
-      var targetX = CAT_X; // canvas pixel target
-      var canvasRect = canvas.getBoundingClientRect();
-      var scaleX = canvas.width / canvasRect.width;
-      var scaleY = canvas.height / canvasRect.height;
-      var targetScreenX = canvasRect.left + targetX / scaleX;
-      var targetScreenY = canvasRect.top + (groundY - CAT_H) / scaleY;
-
-      // Step 1: lock idle canvas to current screen position (no flash)
-      idleCanvas.style.position = "fixed";
-      idleCanvas.style.left = startX + "px";
-      idleCanvas.style.top = startY + "px";
-      idleCanvas.style.zIndex = "200";
-      idleCanvas.style.pointerEvents = "none";
-      idleCanvas.style.transition = "none";
-      idleCanvas.style.margin = "0";
-      idleDiv.style.display = "block";
-      // Force layout
-      idleCanvas.getBoundingClientRect();
-
-      // Step 2: animate fly
-      requestAnimationFrame(function() {
-        idleCanvas.style.transition = "left 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
-        idleCanvas.style.left = targetScreenX + "px";
-        idleCanvas.style.top = targetScreenY + "px";
-        idleCanvas.style.transform = "scale(0.5)";
-        idleCanvas.style.width = "48px";
-        idleCanvas.style.height = "48px";
-      });
-
-      // Step 3: land
-      setTimeout(function() {
-        // Reset idle canvas
-        idleCanvas.style.position = "";
-        idleCanvas.style.left = "";
-        idleCanvas.style.top = "";
-        idleCanvas.style.zIndex = "";
-        idleCanvas.style.pointerEvents = "";
-        idleCanvas.style.transition = "";
-        idleCanvas.style.transform = "";
-        idleCanvas.style.width = "";
-        idleCanvas.style.height = "";
-        idleCanvas.style.margin = "";
-        idleDiv.style.display = "none";
-        catLanded = true;
-      }, 460);
     }
 
     function endGame() {
@@ -286,9 +229,6 @@
 
   .pixelcat-idle {
     display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-sm);
     cursor: pointer;
     padding: var(--space-lg);
     border-radius: var(--radius-lg);
@@ -302,11 +242,6 @@
     image-rendering: pixelated;
     width: 96px;
     height: 96px;
-  }
-
-  .pixelcat-hint {
-    font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
   }
 
   .pixelcat-canvas {
