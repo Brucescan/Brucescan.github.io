@@ -1,6 +1,6 @@
 // Site-wide configuration — edit this to personalize your blog
 export const site = {
-  title: "Tremendous Transit",
+  title: "brucescan的桃花源",
   description: "Thoughts on code, design, and the spaces in between.",
   author: "Brucescan",
   url: "https://brucescan.github.io",
