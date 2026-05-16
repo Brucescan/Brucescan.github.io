@@ -1,0 +1,340 @@
+<div class="pixelcat-wrapper" id="pixelcatWrapper">
+  <!-- Idle -->
+  <div class="pixelcat-idle" id="pixelcatIdle">
+    <canvas id="idleCatCanvas" width="64" height="64" aria-label="Pixel cat"></canvas>
+    <span class="pixelcat-hint">Click the cat to play</span>
+  </div>
+
+  <!-- Game canvas (full-width, no border) -->
+  <canvas class="pixelcat-canvas" id="gameCanvas" style="display:none" aria-label="Cat runner game"></canvas>
+  <div class="game-score" id="gameScore" style="display:none">0</div>
+  <div class="game-over-overlay" id="gameOverOverlay" style="display:none">
+    <div class="game-over-card">
+      <div class="game-over-title">Game Over</div>
+      <div class="game-over-score">Score: <span id="finalScore">0</span></div>
+      <button class="game-restart-btn" id="restartBtn">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var wrapper = document.getElementById("pixelcatWrapper");
+    var idleDiv = document.getElementById("pixelcatIdle");
+    var canvas = document.getElementById("gameCanvas");
+    var ctx = canvas ? canvas.getContext("2d") : null;
+    var idleCanvas = document.getElementById("idleCatCanvas");
+    var idleCtx = idleCanvas ? idleCanvas.getContext("2d") : null;
+    var scoreEl = document.getElementById("gameScore");
+    var gameOverOverlay = document.getElementById("gameOverOverlay");
+    var finalScoreEl = document.getElementById("finalScore");
+    var restartBtn = document.getElementById("restartBtn");
+
+    if (!wrapper || !canvas || !ctx) return;
+
+    // ── Idle cat ──
+    function drawIdleCat() {
+      if (!idleCtx) return;
+      idleCtx.clearRect(0, 0, 64, 64);
+      var c = idleCtx;
+      c.fillStyle = "#ff9f43";  c.fillRect(20,24,24,20);
+      c.fillStyle = "#ffbe76";  c.fillRect(16,8,32,20);
+      c.fillStyle = "#ff9f43";  c.fillRect(16,0,8,12); c.fillRect(40,0,8,12);
+      c.fillStyle = "#fdcb6e";  c.fillRect(18,2,4,8);  c.fillRect(42,2,4,8);
+      c.fillStyle = "#2d3436";  c.fillRect(24,14,4,6); c.fillRect(36,14,4,6);
+      c.fillStyle = "#fff";     c.fillRect(26,14,2,2); c.fillRect(38,14,2,2);
+      c.fillStyle = "#e17055";  c.fillRect(30,20,4,3);
+      c.fillStyle = "#2d3436";  c.fillRect(28,24,8,2);
+      c.fillStyle = "#ffbe76";  c.fillRect(20,44,10,6); c.fillRect(34,44,10,6);
+      c.fillStyle = "#ff9f43";  c.fillRect(44,28,8,4); c.fillRect(48,24,5,10);
+    }
+    if (idleCtx) drawIdleCat();
+
+    // ── Game state ──
+    var CAT_W = 48, CAT_H = 48, CAT_X = 100;
+    var groundY, catY;
+    var vy = 0, gravity = 0.7, jumpForce = -12;
+    var isJumping = false;
+    var obstacles = [];
+    var score = 0, speed = 6;
+    var gameRunning = false, introRunning = false;
+    var animId = null;
+    var frameCount = 0;
+    var introLineX = 0;       // 0..1 animation progress
+    var introDone = false;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = 200;
+      groundY = canvas.height * 0.72;
+      catY = groundY - CAT_H;
+    }
+
+    function drawCat(x, y, w, h, frame) {
+      var f = frame % 4;
+      ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.25, y+h*0.35, w*0.5, h*0.5);
+      ctx.fillStyle = "#ffbe76"; ctx.fillRect(x+w*0.2, y+h*0.05, w*0.6, h*0.35);
+      ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.2, y, w*0.15, h*0.18); ctx.fillRect(x+w*0.65, y, w*0.15, h*0.18);
+      ctx.fillStyle = "#2d3436"; ctx.fillRect(x+w*0.35, y+h*0.15, w*0.1, h*0.12); ctx.fillRect(x+w*0.55, y+h*0.15, w*0.1, h*0.12);
+      ctx.fillStyle = "#ffbe76";
+      if (f === 0 || f === 2) { ctx.fillRect(x+w*0.28, y+h*0.85, w*0.18, h*0.15); ctx.fillRect(x+w*0.55, y+h*0.85, w*0.18, h*0.15); }
+      else { ctx.fillRect(x+w*0.2, y+h*0.82, w*0.18, h*0.15); ctx.fillRect(x+w*0.6, y+h*0.82, w*0.18, h*0.15); }
+      ctx.fillStyle = "#ff9f43"; ctx.fillRect(x+w*0.75, y+h*0.4, w*0.2, h*0.1);
+      if (f%2) ctx.fillRect(x+w*0.85, y+h*0.3, w*0.12, h*0.2);
+    }
+
+    function drawGround() {
+      // Page-matching transparent — just the ground line
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
+      ctx.fillRect(0, groundY, canvas.width, 2);
+    }
+
+    function drawIntroLine() {
+      var w = canvas.width * introLineX;
+      if (w < 0) w = 0;
+      if (w > canvas.width) w = canvas.width;
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.18)";
+      ctx.fillRect(0, groundY, w, 2);
+      // Small cat waiting at left
+      drawCat(CAT_X, catY, CAT_W, CAT_H, 0);
+    }
+
+    function drawObstacle(obs) {
+      ctx.fillStyle = "#636e72";
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      // Spikes
+      ctx.fillStyle = "#b2bec3";
+      for (var sx = obs.x + 2; sx < obs.x + obs.w - 2; sx += 10) {
+        ctx.fillRect(sx, obs.y - 6, 6, 8);
+      }
+    }
+
+    function spawnObstacle() {
+      var h = 28 + Math.random() * 38;
+      obstacles.push({ x: canvas.width, y: groundY - h, w: 18 + Math.random() * 20, h: h });
+    }
+
+    var obstacleTimer = 0, nextObstacle = 70;
+
+    function gameLoop() {
+      if (!gameRunning && !introRunning) return;
+
+      if (introRunning && !introDone) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawIntroLine();
+        introLineX += 0.018;
+        if (introLineX >= 1) {
+          introLineX = 1;
+          introDone = true;
+          introRunning = false;
+          gameRunning = true;
+          scoreEl.style.display = "block";
+        }
+        animId = requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      if (!gameRunning) return;
+      frameCount++;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGround();
+
+      // Cat
+      if (isJumping) {
+        catY += vy;
+        vy += gravity;
+        if (catY >= groundY - CAT_H) { catY = groundY - CAT_H; vy = 0; isJumping = false; }
+      }
+      drawCat(CAT_X, catY, CAT_W, CAT_H, isJumping ? 0 : frameCount);
+
+      // Obstacles
+      obstacleTimer++;
+      if (obstacleTimer > nextObstacle) {
+        spawnObstacle();
+        obstacleTimer = 0;
+        nextObstacle = 40 + Math.floor(Math.random() * 55);
+      }
+      for (var i = obstacles.length - 1; i >= 0; i--) {
+        var obs = obstacles[i];
+        obs.x -= speed;
+        drawObstacle(obs);
+        var cl = CAT_X + 6, cr = CAT_X + CAT_W - 6;
+        var ct = catY + 6, cb = catY + CAT_H - 4;
+        if (cr > obs.x + 3 && cl < obs.x + obs.w - 3 && cb > obs.y + 3 && ct < obs.y + obs.h) {
+          endGame(); return;
+        }
+        if (obs.x < -60) { obstacles.splice(i, 1); score += 10; speed = 6 + Math.floor(score/60); }
+      }
+
+      scoreEl.textContent = score;
+      if (frameCount % 15 === 0) score += 1;
+      animId = requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      idleDiv.style.display = "none";
+      canvas.style.display = "block";
+      resize();
+      obstacles = []; score = 0; speed = 6;
+      vy = 0; isJumping = false; catY = groundY - CAT_H;
+      frameCount = 0; obstacleTimer = 0; nextObstacle = 70;
+      introLineX = 0; introDone = false; introRunning = true; gameRunning = false;
+      scoreEl.textContent = "0"; scoreEl.style.display = "none";
+      gameOverOverlay.style.display = "none";
+      var rect = wrapper.getBoundingClientRect();
+      canvas.style.marginTop = (100 - rect.height) + "px";
+      animId = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      gameRunning = false; introRunning = false;
+      if (animId) cancelAnimationFrame(animId);
+      gameOverOverlay.style.display = "flex";
+      finalScoreEl.textContent = score;
+    }
+
+    function restart() {
+      gameRunning = false; introRunning = false;
+      if (animId) cancelAnimationFrame(animId);
+      canvas.style.display = "none";
+      scoreEl.style.display = "none";
+      gameOverOverlay.style.display = "none";
+      idleDiv.style.display = "inline-flex";
+    }
+
+    function jump() {
+      if (!gameRunning) return;
+      if (!isJumping) { vy = jumpForce; isJumping = true; }
+    }
+
+    // ── Events ──
+    idleDiv.addEventListener("click", startGame);
+    canvas.addEventListener("click", jump);
+    document.addEventListener("keydown", function(e) {
+      if (!gameRunning) return;
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); jump(); }
+    });
+    restartBtn.addEventListener("click", function(e) { e.stopPropagation(); restart(); });
+    window.addEventListener("resize", function() { if (gameRunning || introRunning) resize(); });
+  })();
+</script>
+
+<style>
+  .pixelcat-wrapper {
+    position: relative;
+    margin: var(--space-3xl) 0;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .pixelcat-idle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    transition: transform var(--transition-spring);
+  }
+
+  .pixelcat-idle:hover { transform: translateY(-4px); }
+  .pixelcat-idle:active { transform: scale(0.95); }
+
+  .pixelcat-idle canvas {
+    image-rendering: pixelated;
+    width: 96px;
+    height: 96px;
+  }
+
+  .pixelcat-hint {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+  }
+
+  .pixelcat-canvas {
+    display: block;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    image-rendering: auto;
+    cursor: pointer;
+  }
+
+  .game-score {
+    position: fixed;
+    top: 60px;
+    right: 32px;
+    z-index: 50;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .game-over-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .game-over-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-3xl);
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+  }
+
+  .game-over-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .game-over-score {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+  }
+
+  .game-restart-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 28px;
+    font-size: var(--text-base);
+    font-weight: 500;
+    font-family: var(--font-sans);
+    border-radius: 980px;
+    border: none;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    background: var(--color-text);
+    color: var(--color-bg);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .game-restart-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .game-restart-btn:active {
+    transform: scale(0.97);
+  }
+</style>

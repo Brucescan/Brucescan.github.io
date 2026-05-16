@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
 import BilibiliBanner from "../components/BilibiliBanner.astro";
+import PixelCat from "../components/PixelCat.astro";
 import BlogCard from "../components/BlogCard.astro";
 import TagsBar from "../components/TagsBar.astro";
 import { getCollection } from "astro:content";
@@ -106,6 +107,12 @@ const tags = Array.from(tagMap.entries())
         <p>Hello! I'm a developer who loves building things for the web. This is my space to share ideas, document learnings, and connect with others.</p>
         <p>When I'm not coding, you'll find me exploring cities, reading science fiction, and tinkering with side projects.</p>
       </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="container reveal">
+      <PixelCat />
     </div>
   </section>
 </BaseLayout>
