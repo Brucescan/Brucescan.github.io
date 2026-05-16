@@ -11,87 +11,85 @@
   <div class="bilibili-layer"><img src="/images/bilibili/leaf.png" width="3000" height="275" alt="" /></div>
 </div>
 
-<script is:inline>
-  // ── Faithful replica of B站 banner logic ──
-  var banner = document.getElementById("bilibiliBanner");
-  var layers = document.querySelectorAll(".bilibili-layer");
-  if (!banner || layers.length === 0) return;
+<script>
+  (function() {
+    var banner = document.getElementById("bilibiliBanner");
+    var layers = document.querySelectorAll(".bilibili-layer");
+    if (!banner || layers.length === 0) return;
 
-  var x = 0;
-  var x_new = 0;
-  var x_offset = 0;
+    var x = 0;
+    var x_new = 0;
+    var x_offset = 0;
 
-  var window_width = document.documentElement.clientWidth;
-  var step = window_width / 2 / 5;
+    var window_width = document.documentElement.clientWidth;
+    var step = window_width / 2 / 5;
 
-  // base blur per layer: bg=4, girl=0, grassland=1, mushroom=4, spirit=5, leaf=6
-  var data_images = [
-    { x: 0, b: 4 },
-    { x: 0, b: 0 },
-    { x: 0, b: 1 },
-    { x: 0, b: 4 },
-    { x: 0, b: 5 },
-    { x: 0, b: 6 },
-  ];
+    var data_images = [
+      { x: 0, b: 4 },
+      { x: 0, b: 0 },
+      { x: 0, b: 1 },
+      { x: 0, b: 4 },
+      { x: 0, b: 5 },
+      { x: 0, b: 6 },
+    ];
 
-  function init() {
-    for (var i = 0; i < layers.length; i++) {
-      var el = layers[i];
-      var d = data_images[i];
-      el.children[0].style.cssText =
-        "transition: .2s linear; transform: translate(" + d.x + "px); filter: blur(" + d.b + "px);";
+    function init() {
+      for (var i = 0; i < layers.length; i++) {
+        var el = layers[i];
+        var d = data_images[i];
+        el.children[0].style.cssText =
+          "transition: .2s linear; transform: translate(" + d.x + "px); filter: blur(" + d.b + "px);";
+      }
     }
-  }
 
-  banner.addEventListener("mouseover", function(e) {
-    x = e.clientX;
-  });
+    banner.addEventListener("mouseover", function(e) {
+      x = e.clientX;
+    });
 
-  banner.addEventListener("mousemove", function(e) {
-    x_new = e.clientX;
-    x_offset = x - x_new;
-    // NOTE: x is NOT updated — offset accumulates from mouseover point
-    for (var i = 0; i < layers.length; i++) {
-      var level = (6 - i) * 10;
-      var el = layers[i];
-      var d = data_images[i];
-      var b_new = Math.abs(d.b + (x_offset / step));
-      var l_new = 0 - (x_offset / level);
-      el.children[0].style.cssText =
-        "transform: translate(" + l_new + "px); filter: blur(" + b_new + "px);";
+    banner.addEventListener("mousemove", function(e) {
+      x_new = e.clientX;
+      x_offset = x - x_new;
+      for (var i = 0; i < layers.length; i++) {
+        var level = (6 - i) * 10;
+        var el = layers[i];
+        var d = data_images[i];
+        var b_new = Math.abs(d.b + (x_offset / step));
+        var l_new = 0 - (x_offset / level);
+        el.children[0].style.cssText =
+          "transform: translate(" + l_new + "px); filter: blur(" + b_new + "px);";
+      }
+    });
+
+    banner.addEventListener("mouseout", function() {
+      init();
+    });
+
+    window.addEventListener("resize", function() {
+      window_width = document.documentElement.clientWidth;
+      step = window_width / 2 / 5;
+    });
+
+    var girlImg = document.getElementById("girlImg");
+    var blink_index = 0;
+    var blink_timeout = 4000;
+
+    function blink() {
+      if (blink_index === 4) {
+        blink_index = 1;
+        blink_timeout = 4000;
+      } else {
+        blink_index += 1;
+        blink_timeout = 30;
+      }
+      if (girlImg) {
+        girlImg.src = "/images/bilibili/girl" + blink_index + ".png";
+      }
+      setTimeout(blink, blink_timeout);
     }
-  });
 
-  banner.addEventListener("mouseout", function() {
     init();
-  });
-
-  window.addEventListener("resize", function() {
-    window_width = document.documentElement.clientWidth;
-    step = window_width / 2 / 5;
-  });
-
-  // ── Girl blink (exact replica) ──
-  var girlImg = document.getElementById("girlImg");
-  var blink_index = 0;
-  var blink_timeout = 4000;
-
-  function blink() {
-    if (blink_index === 4) {
-      blink_index = 1;
-      blink_timeout = 4000;
-    } else {
-      blink_index += 1;
-      blink_timeout = 30;
-    }
-    if (girlImg) {
-      girlImg.src = "/images/bilibili/girl" + blink_index + ".png";
-    }
-    setTimeout(blink, blink_timeout);
-  }
-
-  init();
-  blink();
+    blink();
+  })();
 </script>
 
 <style>
