@@ -49,10 +49,77 @@ const currentPath = Astro.url.pathname;
             <path d="M13.5 10.5A6 6 0 015.5 2.5 6 6 0 1013.5 10.5z" stroke-linejoin="round"/>
           </svg>
         </button>
+
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+          <span class="hamburger-line"></span>
+        </button>
       </div>
     </div>
   </div>
 </header>
+
+<!-- Mobile nav overlay -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay" aria-hidden="true"></div>
+<nav class="mobile-nav-panel" id="mobileNavPanel" aria-label="Mobile navigation">
+  {
+    site.nav.map((item) => (
+      <a
+        href={item.href}
+        class:list={["mobile-nav-link", { active: currentPath === item.href }]}
+      >
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
+
+<script>
+  (function() {
+    var btn = document.getElementById("hamburgerBtn");
+    var overlay = document.getElementById("mobileNavOverlay");
+    var panel = document.getElementById("mobileNavPanel");
+    if (!btn || !overlay || !panel) return;
+
+    var isOpen = false;
+
+    function open() {
+      isOpen = true;
+      btn.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+      panel.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function close() {
+      isOpen = false;
+      btn.classList.remove("open");
+      btn.setAttribute("aria-expanded", "false");
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+      panel.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    btn.addEventListener("click", function() {
+      isOpen ? close() : open();
+    });
+
+    overlay.addEventListener("click", close);
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && isOpen) {
+        close();
+      }
+    });
+
+    // Close on link click
+    panel.querySelectorAll("a").forEach(function(link) {
+      link.addEventListener("click", close);
+    });
+  })();
+</script>
 
 <style>
   .header {

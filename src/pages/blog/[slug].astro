@@ -1,6 +1,7 @@
 ---
 import { getCollection, getEntry, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { site } from "../../data/site";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -19,6 +20,13 @@ if (!post) {
 
 const { Content } = await render(post);
 
+// Auto-calculate reading time
+const bodyText = post.body || "";
+const chineseChars = (bodyText.match(/[一-鿿]/g) || []).length;
+const englishWords = (bodyText.match(/[a-zA-Z]+/g) || []).length;
+const readingMinutes = Math.max(1, Math.ceil(Math.max(chineseChars / 400, englishWords / 200)));
+const readingTime = `${readingMinutes} min read`;
+
 // Related posts: same tags, excluding current
 const allPosts = await getCollection("blog");
 const relatedPosts = allPosts
@@ -31,7 +39,7 @@ const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
   day: "numeric",
 });
 
-const pageUrl = `https://brucescan.github.io/blog/${id}`;
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
@@ -45,12 +53,8 @@ const pageUrl = `https://brucescan.github.io/blog/${id}`;
       </a>
       <div class="post-meta">
         <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
-        {post.data.readingTime && (
-          <>
-            <span class="dot">·</span>
-            <span>{post.data.readingTime}</span>
-          </>
-        )}
+        <span class="dot">·</span>
+        <span>{readingTime}</span>
         {post.data.tags && post.data.tags.length > 0 && (
           <>
             <span class="dot">·</span>
@@ -108,6 +112,17 @@ const pageUrl = `https://brucescan.github.io/blog/${id}`;
       </div>
     </div>
   </article>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.data.title,
+    "description": post.data.description,
+    "datePublished": post.data.date.toISOString(),
+    "author": { "@type": "Person", "name": site.author },
+    "url": pageUrl,
+  })}>
+  </script>
 
   <script>
     document.getElementById("copyLinkBtn")?.addEventListener("click", function() {
@@ -178,6 +193,16 @@ const pageUrl = `https://brucescan.github.io/blog/${id}`;
       );
 
       headings.forEach((h) => observer.observe(h));
+
+      // --- Wrap tables for responsive scroll ---
+      postBody.querySelectorAll("table").forEach(function(table) {
+        if (!table.parentElement.classList.contains("table-wrapper")) {
+          var wrapper = document.createElement("div");
+          wrapper.className = "table-wrapper";
+          table.parentNode.insertBefore(wrapper, table);
+          wrapper.appendChild(table);
+        }
+      });
     })();
   </script>
 </BaseLayout>

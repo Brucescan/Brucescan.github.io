@@ -19,7 +19,7 @@ import { site } from "../data/site";
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy">&copy; {new Date().getFullYear()} {site.author}. Built with Astro.</p>
+      <p class="footer-copy">&copy; {new Date().getFullYear()} {site.author}. <a href="/rss.xml" class="footer-rss">RSS</a></p>
     </div>
   </div>
 </footer>
@@ -75,6 +75,16 @@ import { site } from "../data/site";
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
     margin: 0;
+  }
+
+  .footer-rss {
+    color: var(--color-text-tertiary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .footer-rss:hover {
+    color: var(--color-accent);
   }
 
   @media (max-width: 480px) {

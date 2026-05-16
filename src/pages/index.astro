@@ -8,6 +8,13 @@ import TagsBar from "../components/TagsBar.astro";
 import { getCollection } from "astro:content";
 
 const allPosts = await getCollection("blog");
+
+function calcReadingTime(body: string) {
+  const chineseChars = (body.match(/[一-鿿]/g) || []).length;
+  const englishWords = (body.match(/[a-zA-Z]+/g) || []).length;
+  return `${Math.max(1, Math.ceil(Math.max(chineseChars / 400, englishWords / 200)))} min read`;
+}
+
 const sortedPosts = allPosts
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
@@ -68,7 +75,7 @@ const tags = Array.from(tagMap.entries())
                   description={post.data.description}
                   date={post.data.date.toISOString()}
                   slug={post.id}
-                  readingTime={post.data.readingTime}
+                  readingTime={calcReadingTime(post.body || "")}
                   tags={post.data.tags}
                 />
               ))}
