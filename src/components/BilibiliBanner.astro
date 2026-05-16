@@ -1,0 +1,135 @@
+<div
+  class="bilibili-banner"
+  id="bilibiliBanner"
+  aria-hidden="true"
+>
+  <div class="bilibili-layer" data-blur="4" data-level="60">
+    <img src="/images/bilibili/bg.png" alt="" width="3000" height="250" />
+  </div>
+  <div class="bilibili-layer" data-blur="0" data-level="50" id="girlLayer">
+    <img src="/images/bilibili/girl1.png" alt="" width="1800" height="165" id="girlImg" />
+  </div>
+  <div class="bilibili-layer" data-blur="1" data-level="40">
+    <img src="/images/bilibili/grassland.png" alt="" width="3000" height="250" />
+  </div>
+  <div class="bilibili-layer" data-blur="4" data-level="30">
+    <img src="/images/bilibili/mushroom.png" alt="" width="1800" height="160" />
+  </div>
+  <div class="bilibili-layer" data-blur="5" data-level="20">
+    <img src="/images/bilibili/spirit.png" alt="" width="1800" height="165" />
+  </div>
+  <div class="bilibili-layer" data-blur="6" data-level="10">
+    <img src="/images/bilibili/leaf.png" alt="" width="1950" height="178" />
+  </div>
+</div>
+
+<script>
+  (function() {
+    var banner = document.getElementById("bilibiliBanner");
+    var layers = banner ? banner.querySelectorAll(".bilibili-layer") : [];
+    var girlImg = document.getElementById("girlImg");
+    if (!banner || layers.length === 0) return;
+
+    // ── Layer state ──
+    var baseBlur = [];
+    var levels = [];
+    layers.forEach(function(l) {
+      baseBlur.push(parseFloat(l.getAttribute("data-blur")) || 0);
+      levels.push(parseFloat(l.getAttribute("data-level")) || 10);
+    });
+
+    var windowWidth = document.documentElement.clientWidth;
+    var step = windowWidth / 2 / 5;
+
+    window.addEventListener("resize", function() {
+      windowWidth = document.documentElement.clientWidth;
+      step = windowWidth / 2 / 5;
+    });
+
+    // ── Init: apply base state ──
+    function init() {
+      layers.forEach(function(l, i) {
+        l.style.transition = "0.2s linear";
+        l.style.transform = "translate(0px)";
+        l.style.filter = "blur(" + baseBlur[i] + "px)";
+      });
+    }
+
+    // ── Parallax on mousemove ──
+    var prevX = 0;
+
+    banner.addEventListener("mouseover", function(e) {
+      prevX = e.clientX;
+    });
+
+    banner.addEventListener("mousemove", function(e) {
+      var xNew = e.clientX;
+      var xOffset = prevX - xNew;
+      prevX = xNew;
+
+      layers.forEach(function(l, i) {
+        var bNew = Math.abs(baseBlur[i] + (xOffset / step));
+        var lNew = 0 - (xOffset / levels[i]);
+        l.style.transition = "none";
+        l.style.transform = "translate(" + lNew + "px)";
+        l.style.filter = "blur(" + bNew + "px)";
+      });
+    });
+
+    banner.addEventListener("mouseout", function() {
+      init();
+    });
+
+    // ── Girl blink animation ──
+    var blinkIndex = 0;
+    var blinkTimeout = 4000;
+
+    function blink() {
+      if (blinkIndex === 4) {
+        blinkIndex = 1;
+        blinkTimeout = 4000;
+      } else {
+        blinkIndex += 1;
+        blinkTimeout = 30;
+      }
+      if (girlImg) {
+        girlImg.src = "/images/bilibili/girl" + blinkIndex + ".png";
+      }
+      setTimeout(blink, blinkTimeout);
+    }
+
+    init();
+    blink();
+  })();
+</script>
+
+<style>
+  .bilibili-banner {
+    position: relative;
+    width: 100%;
+    height: 155px;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    margin: var(--space-lg) auto 0;
+    max-width: 780px;
+    background: #00b894;
+    cursor: default;
+  }
+
+  .bilibili-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .bilibili-layer img {
+    display: block;
+    min-width: 100%;
+    height: 100%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+</style>

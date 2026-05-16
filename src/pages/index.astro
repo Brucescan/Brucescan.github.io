@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
+import BilibiliBanner from "../components/BilibiliBanner.astro";
 import BlogCard from "../components/BlogCard.astro";
 import TagsBar from "../components/TagsBar.astro";
 import { getCollection } from "astro:content";
@@ -22,6 +23,12 @@ const tags = Array.from(tagMap.entries())
 
 <BaseLayout>
   <Hero />
+
+  <section class="section" style="padding-top:0; padding-bottom:0;">
+    <div class="container">
+      <BilibiliBanner />
+    </div>
+  </section>
 
   <section id="posts" class="section">
     <div class="container">

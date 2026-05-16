@@ -57,7 +57,6 @@ const searchIndex = allPosts.map((p) => ({
     </script>
   </head>
   <body>
-    <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
     <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
 
     <!-- Search overlay -->
@@ -106,7 +105,6 @@ const searchIndex = allPosts.map((p) => ({
         var searchInput   = $("searchInput");
         var searchResults = $("searchResults");
         var searchTrigger = $("searchTrigger");
-        var cursorGlow    = $("cursorGlow");
         var progressBar   = $("readingProgress");
         var backToTop     = $("backToTop");
         var themeToggle   = $("themeToggle");
@@ -269,29 +267,6 @@ const searchIndex = allPosts.map((p) => ({
             });
           });
         });
-
-        // ── Cursor glow ──
-        if (cursorGlow && window.matchMedia("(pointer: fine)").matches) {
-          var mx = 0, my = 0, cx = 0, cy = 0;
-          document.addEventListener("mousemove", function(e) {
-            mx = e.clientX;
-            my = e.clientY;
-          }, { passive: true });
-
-          function animateGlow() {
-            cx += (mx - cx) * 0.08;
-            cy += (my - cy) * 0.08;
-            cursorGlow.style.left = cx + "px";
-            cursorGlow.style.top = cy + "px";
-            requestAnimationFrame(animateGlow);
-          }
-          animateGlow();
-
-          // Show glow after first move
-          document.addEventListener("mousemove", function once() {
-            cursorGlow.style.opacity = "1";
-          }, { once: true });
-        }
 
         // ── Magnetic tilt for cards ──
         document.querySelectorAll(".blog-card, .btn-primary").forEach(function(el) {

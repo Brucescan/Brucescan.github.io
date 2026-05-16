@@ -3,11 +3,17 @@ import { site } from "../data/site";
 ---
 
 <section class="hero">
-  <!-- Animated liquid blobs -->
-  <div class="hero-blobs" aria-hidden="true">
-    <div class="hero-blob"></div>
-    <div class="hero-blob"></div>
-    <div class="hero-blob"></div>
+  <!-- Parallax blobs -->
+  <div class="hero-blobs" id="heroBlobs" aria-hidden="true">
+    <div class="hero-blob-wrapper" data-depth="0.18">
+      <div class="hero-blob"></div>
+    </div>
+    <div class="hero-blob-wrapper" data-depth="0.10">
+      <div class="hero-blob"></div>
+    </div>
+    <div class="hero-blob-wrapper" data-depth="0.06">
+      <div class="hero-blob"></div>
+    </div>
   </div>
 
   <div class="container hero-content">
@@ -144,3 +150,34 @@ import { site } from "../data/site";
     box-shadow: 0 4px 16px var(--color-shadow-md);
   }
 </style>
+
+<script>
+  (function() {
+    var hero = document.querySelector(".hero");
+    var wrappers = document.querySelectorAll(".hero-blob-wrapper");
+    if (!hero || wrappers.length === 0) return;
+
+    var maxOffset = 50; // px
+
+    hero.addEventListener("mousemove", function(e) {
+      var rect = hero.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 .. 0.5
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+
+      wrappers.forEach(function(w) {
+        var depth = parseFloat(w.getAttribute("data-depth")) || 0.1;
+        var ox = x * maxOffset * depth * 2;
+        var oy = y * maxOffset * depth * 2;
+        w.style.transition = "none";
+        w.style.transform = "translate(" + ox + "px, " + oy + "px)";
+      });
+    });
+
+    hero.addEventListener("mouseleave", function() {
+      wrappers.forEach(function(w) {
+        w.style.transition = "";
+        w.style.transform = "";
+      });
+    });
+  })();
+</script>
