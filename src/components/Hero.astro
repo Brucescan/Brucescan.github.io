@@ -1,5 +1,12 @@
 ---
 import { site } from "../data/site";
+
+interface Props {
+  postCount?: number;
+  tagCount?: number;
+}
+
+const { postCount = 0, tagCount = 0 } = Astro.props;
 ---
 
 <section class="hero">
@@ -24,6 +31,11 @@ import { site } from "../data/site";
     </div>
     <h1 class="hero-title reveal">Brucescan</h1>
     <p class="hero-tagline reveal">{site.description}</p>
+    <div class="hero-stats reveal">
+      <span class="hero-stat"><strong id="statPosts">{postCount}</strong> articles</span>
+      <span class="hero-stat-dot">·</span>
+      <span class="hero-stat"><strong id="statTags">{tagCount}</strong> tags</span>
+    </div>
     <div class="hero-actions reveal">
       <a href="#posts" class="btn btn-primary lggc">Read the blog</a>
       {
@@ -34,6 +46,11 @@ import { site } from "../data/site";
         )
       }
     </div>
+  </div>
+
+  <!-- Scroll-down indicator -->
+  <div class="scroll-indicator" id="scrollIndicator" aria-hidden="true">
+    <span class="scroll-indicator-line"></span>
   </div>
 </section>
 
@@ -211,36 +228,132 @@ import { site } from "../data/site";
   [data-theme="dark"] .btn-secondary:hover {
     --lggc-bg: rgba(255, 255, 255, 0.16);
   }
-</style>
+
+  /* Hero stats */
+  .hero-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+  }
+
+  .hero-stat strong {
+    color: var(--color-text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hero-stat-dot {
+    color: var(--color-text-tertiary);
+  }
+
+  /* Scroll-down indicator */
+  .scroll-indicator {
+    position: absolute;
+    bottom: var(--space-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .scroll-indicator.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .scroll-indicator-line {
+    display: block;
+    width: 1px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--color-text-tertiary), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  .scroll-indicator::after {
+    content: "";
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid var(--color-text-tertiary);
+    border-bottom: 1.5px solid var(--color-text-tertiary);
+    transform: rotate(45deg);
+    animation: scrollChevron 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.1); }
+  }
+
+  @keyframes scrollChevron {
+    0%, 100% { opacity: 0.3; transform: rotate(45deg) translateY(0); }
+    50% { opacity: 1; transform: rotate(45deg) translateY(4px); }
+  }
 </style>
 
 <script>
   (function() {
+    // Parallax blobs
     var hero = document.querySelector(".hero");
     var wrappers = document.querySelectorAll(".hero-blob-wrapper");
-    if (!hero || wrappers.length === 0) return;
-
-    var maxOffset = 50; // px
-
-    hero.addEventListener("mousemove", function(e) {
-      var rect = hero.getBoundingClientRect();
-      var x = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 .. 0.5
-      var y = (e.clientY - rect.top) / rect.height - 0.5;
-
-      wrappers.forEach(function(w) {
-        var depth = parseFloat(w.getAttribute("data-depth")) || 0.1;
-        var ox = x * maxOffset * depth * 2;
-        var oy = y * maxOffset * depth * 2;
-        w.style.transition = "none";
-        w.style.transform = "translate(" + ox + "px, " + oy + "px)";
+    if (hero && wrappers.length > 0) {
+      var maxOffset = 50;
+      hero.addEventListener("mousemove", function(e) {
+        var rect = hero.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width - 0.5;
+        var y = (e.clientY - rect.top) / rect.height - 0.5;
+        wrappers.forEach(function(w) {
+          var depth = parseFloat(w.getAttribute("data-depth")) || 0.1;
+          w.style.transition = "none";
+          w.style.transform = "translate(" + (x * maxOffset * depth * 2) + "px, " + (y * maxOffset * depth * 2) + "px)";
+        });
       });
-    });
-
-    hero.addEventListener("mouseleave", function() {
-      wrappers.forEach(function(w) {
-        w.style.transition = "";
-        w.style.transform = "";
+      hero.addEventListener("mouseleave", function() {
+        wrappers.forEach(function(w) {
+          w.style.transition = "";
+          w.style.transform = "";
+        });
       });
-    });
+    }
+
+    // Scroll indicator fade
+    var indicator = document.getElementById("scrollIndicator");
+    if (indicator) {
+      window.addEventListener("scroll", function() {
+        indicator.classList.toggle("hidden", window.scrollY > 100);
+      }, { passive: true });
+    }
+
+    // Animated count-up for stats
+    var statPosts = document.getElementById("statPosts");
+    var statTags = document.getElementById("statTags");
+    if (statPosts || statTags) {
+      function animateCount(el, target, duration) {
+        if (!el) return;
+        var start = 0;
+        var startTime = performance.now();
+        function step(now) {
+          var progress = Math.min((now - startTime) / duration, 1);
+          // Ease-out cubic
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.floor(eased * target);
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = target;
+        }
+        requestAnimationFrame(step);
+      }
+      // Delay until reveal animation completes (~700ms)
+      setTimeout(function() {
+        animateCount(statPosts, parseInt(statPosts.textContent) || 0, 1000);
+        animateCount(statTags, parseInt(statTags.textContent) || 0, 1200);
+      }, 800);
+    }
   })();
 </script>

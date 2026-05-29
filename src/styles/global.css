@@ -1174,6 +1174,7 @@ blockquote.callout-tip {
 .post-body :global(.astro-code) {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
+  counter-reset: line;
 }
 
 .post-body :global(.astro-code code) {
@@ -1183,6 +1184,22 @@ blockquote.callout-tip {
   font-size: inherit;
 }
 
+/* CSS line numbers for code blocks */
+.post-body :global(.astro-code .line) {
+  counter-increment: line;
+}
+
+.post-body :global(.astro-code .line)::before {
+  content: counter(line);
+  display: inline-block;
+  width: 2rem;
+  margin-right: 1rem;
+  text-align: right;
+  color: var(--color-text-tertiary);
+  font-size: 0.8em;
+  user-select: none;
+}
+
 /* ══════════════════════════════════════════
    Mobile nav overlay
    ══════════════════════════════════════════ */
@@ -1190,9 +1207,9 @@ blockquote.callout-tip {
   position: fixed;
   inset: 0;
   z-index: 150;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal);
@@ -1209,13 +1226,18 @@ blockquote.callout-tip {
   left: 0;
   right: 0;
   z-index: 151;
-  background: var(--color-header-bg);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   padding: calc(var(--header-height) + var(--space-md)) var(--space-xl) var(--space-xl);
   transform: translateY(-100%);
   transition: transform 0.4s var(--ease-spring);
+}
+
+[data-theme="dark"] .mobile-nav-panel {
+  background: rgba(0, 0, 0, 0.75);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .mobile-nav-panel.active {
