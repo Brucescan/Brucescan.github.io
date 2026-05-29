@@ -1155,29 +1155,29 @@ blockquote.callout-tip {
 /* ══════════════════════════════════════════
    Blog post images
    ══════════════════════════════════════════ */
-.post-body :global(figure) {
+.post-body figure {
   margin-bottom: var(--space-lg);
 }
 
-.post-body :global(figure img) {
+.post-body figure img {
   border-radius: var(--radius-md);
   box-shadow: 0 2px 12px var(--color-shadow);
 }
 
-.post-body :global(figcaption) {
+.post-body figcaption {
   text-align: center;
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
   margin-top: var(--space-sm);
 }
 
-.post-body :global(.astro-code) {
+.post-body .astro-code {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   counter-reset: line;
 }
 
-.post-body :global(.astro-code code) {
+.post-body .astro-code code {
   background: none;
   padding: 0;
   border: none;
@@ -1185,11 +1185,11 @@ blockquote.callout-tip {
 }
 
 /* CSS line numbers for code blocks */
-.post-body :global(.astro-code .line) {
+.post-body .astro-code .line {
   counter-increment: line;
 }
 
-.post-body :global(.astro-code .line)::before {
+.post-body .astro-code .line::before {
   content: counter(line);
   display: inline-block;
   width: 2rem;
