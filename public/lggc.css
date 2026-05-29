@@ -1,12 +1,11 @@
-/* LGGC — Liquid Glass theme-aware overrides */
+/* LGGC — Liquid Glass theme-aware */
 
 .lggc {
   --lggc-radius: 9999px;
   --lggc-padding: 0.75rem 1.25rem;
-  --lggc-bg: rgba(255, 255, 255, 0.18);
-  --lggc-border: rgba(0, 0, 0, 0.08);
+  --lggc-bg: rgba(255, 255, 255, 0.55);
+  --lggc-border: rgba(0, 0, 0, 0.1);
   --lggc-blur: 10px;
-  --lggc-highlight: rgba(255, 255, 255, 0.85);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -24,36 +23,14 @@
   box-sizing: border-box;
   overflow: hidden;
   isolation: isolate;
-  backdrop-filter: blur(calc(var(--lggc-blur) * 0.4)) saturate(160%);
-  -webkit-backdrop-filter: blur(calc(var(--lggc-blur) * 0.4)) saturate(160%);
+  backdrop-filter: blur(var(--lggc-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--lggc-blur)) saturate(140%);
   box-shadow:
-    inset 1px -1px 1px -1px rgba(255, 255, 255, 0.85),
-    inset -1px 1px 1px -1px rgba(255, 255, 255, 0.8),
-    inset 0 0 2px rgba(0, 0, 0, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
-}
-
-.lggc::before,
-.lggc::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-.lggc::before {
-  top: 35%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 16px);
-  height: calc(100% - 16px);
-  border: 1px double rgba(0, 0, 0, 0.12);
-  filter: blur(var(--lggc-blur));
-}
-
-.lggc::after {
-  inset: 0;
 }
 
 .lggc > * {
@@ -62,43 +39,38 @@
 }
 
 .lggc:hover {
-  --lggc-bg: rgba(255, 255, 255, 0.28);
+  --lggc-bg: rgba(255, 255, 255, 0.72);
   box-shadow:
-    inset 1px -1px 1px -1px rgba(255, 255, 255, 0.95),
-    inset -1px 1px 1px -1px rgba(255, 255, 255, 0.9),
-    inset 0 0 2px rgba(0, 0, 0, 0.18),
-    0 12px 32px rgba(0, 0, 0, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
 
 .lggc:active {
   transform: scale(0.97);
   box-shadow:
-    inset 1px -1px 1px -1px rgba(255, 255, 255, 0.8),
-    0 4px 12px rgba(0, 0, 0, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 /* Dark mode */
 [data-theme="dark"] .lggc {
   --lggc-bg: rgba(255, 255, 255, 0.08);
   --lggc-border: rgba(255, 255, 255, 0.12);
-  --lggc-highlight: rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 1px -1px 1px -1px rgba(255, 255, 255, 0.12),
-    inset -1px 1px 1px -1px rgba(255, 255, 255, 0.1),
-    inset 0 0 2px rgba(255, 255, 255, 0.06),
-    0 8px 24px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] .lggc:hover {
-  --lggc-bg: rgba(255, 255, 255, 0.1);
+  --lggc-bg: rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 1px -1px 1px -1px rgba(255, 255, 255, 0.18),
-    inset -1px 1px 1px -1px rgba(255, 255, 255, 0.15),
-    inset 0 0 2px rgba(255, 255, 255, 0.1),
-    0 12px 32px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .lggc::before {
-  border-color: rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3);
 }
