@@ -16,7 +16,7 @@ const currentPath = Astro.url.pathname;
           site.nav.map((item) => (
             <a
               href={item.href}
-              class:list={["nav-link", { active: currentPath === item.href }]}
+              class:list={["nav-link lggc", { active: currentPath === item.href }]}
             >
               {item.label}
             </a>
@@ -25,7 +25,7 @@ const currentPath = Astro.url.pathname;
       </nav>
 
       <div class="header-tools">
-        <button class="search-trigger" id="searchTrigger" aria-label="Search">
+        <button class="search-trigger lggc" id="searchTrigger" aria-label="Search">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="7" cy="7" r="4.5"/>
             <path d="M10.5 10.5L14 14" stroke-linecap="round"/>
@@ -34,7 +34,7 @@ const currentPath = Astro.url.pathname;
           <span class="shortcut">⌘K</span>
         </button>
 
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <button class="theme-toggle lggc" id="themeToggle" aria-label="Toggle dark mode">
           <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="8" cy="8" r="3.5"/>
             <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke-linecap="round"/>
@@ -44,7 +44,7 @@ const currentPath = Astro.url.pathname;
           </svg>
         </button>
 
-        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+        <button class="hamburger-btn lggc" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
           <span class="hamburger-line"></span>
         </button>
       </div>
@@ -167,22 +167,28 @@ const currentPath = Astro.url.pathname;
   }
 
   .nav-link {
-    padding: var(--space-xs) var(--space-md);
+    --lggc-padding: 6px 14px;
+    --lggc-radius: 980px;
+    --lggc-blur: 4px;
     font-size: var(--text-sm);
     font-weight: 500;
     color: var(--color-text-secondary);
     text-decoration: none;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
+    min-width: auto;
+    min-height: auto;
   }
 
   .nav-link:hover {
     color: var(--color-text);
-    background: var(--color-code-bg);
   }
 
   .nav-link.active {
+    --lggc-bg: rgba(0, 0, 0, 0.06);
     color: var(--color-text);
+  }
+
+  [data-theme="dark"] .nav-link.active {
+    --lggc-bg: rgba(255, 255, 255, 0.1);
   }
 
   .header-tools {

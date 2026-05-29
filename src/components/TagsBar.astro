@@ -8,13 +8,13 @@ const { tags, activeTag } = Astro.props;
 ---
 
 <div class="tags-bar">
-  <a href="/#posts" class:list={["tag-pill", { active: activeTag === "" }]}>
+  <a href="/#posts" class:list={["tag-pill lggc", { active: activeTag === "" }]}>
     All
   </a>
   {tags.map((t) => (
     <a
       href={`/tags/${t.name.toLowerCase()}`}
-      class:list={["tag-pill", { active: activeTag === t.name }]}
+      class:list={["tag-pill lggc", { active: activeTag === t.name }]}
     >
       {t.name}
       <span class="count">{t.count}</span>

@@ -25,10 +25,10 @@ import { site } from "../data/site";
     <h1 class="hero-title reveal">Brucescan</h1>
     <p class="hero-tagline reveal">{site.description}</p>
     <div class="hero-actions reveal">
-      <a href="#posts" class="btn btn-primary">Read the blog</a>
+      <a href="#posts" class="btn btn-primary lggc">Read the blog</a>
       {
         site.social.github && (
-          <a href={site.social.github} class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+          <a href={site.social.github} class="btn btn-secondary lggc" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
         )
@@ -64,22 +64,44 @@ import { site } from "../data/site";
     border-radius: 50%;
     overflow: visible;
     position: relative;
+    padding: 4px;
+  }
+
+  .hero-avatar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  [data-theme="dark"] .hero-avatar::before {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.3);
   }
 
   .hero-avatar img {
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     display: block;
     position: relative;
     z-index: 1;
-    box-shadow: 0 4px 24px var(--color-shadow);
     transition: transform var(--transition-spring);
     object-fit: cover;
   }
 
   .hero-avatar:hover img {
-    transform: scale(1.06);
+    transform: scale(1.08);
   }
 
   .hero-title {
@@ -126,28 +148,39 @@ import { site } from "../data/site";
   }
 
   .btn-primary {
-    background: var(--color-text);
+    --lggc-bg: rgba(0, 0, 0, 0.85);
+    --lggc-border: rgba(0, 0, 0, 0.12);
     color: #fff;
+    font-weight: 600;
   }
 
   .btn-primary:hover {
-    background: #333;
+    --lggc-bg: rgba(0, 0, 0, 0.9);
     color: #fff;
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  [data-theme="dark"] .btn-primary {
+    --lggc-bg: rgba(255, 255, 255, 0.9);
+    --lggc-border: rgba(255, 255, 255, 0.15);
+    color: #000;
+  }
+
+  [data-theme="dark"] .btn-primary:hover {
+    --lggc-bg: rgba(255, 255, 255, 0.95);
+    color: #000;
   }
 
   .btn-secondary {
-    background: var(--color-surface);
+    --lggc-bg: rgba(255, 255, 255, 0.6);
+    --lggc-border: rgba(0, 0, 0, 0.12);
     color: var(--color-text);
-    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+    font-weight: 500;
   }
 
-  .btn-secondary:hover {
-    background: var(--color-bg);
-    color: var(--color-text);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 16px var(--color-shadow-md);
+  [data-theme="dark"] .btn-secondary {
+    --lggc-bg: rgba(255, 255, 255, 0.08);
+    --lggc-border: rgba(255, 255, 255, 0.12);
   }
 </style>
 

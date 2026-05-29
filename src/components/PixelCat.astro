@@ -10,7 +10,7 @@
     <div class="game-over-card">
       <div class="game-over-title">Game Over</div>
       <div class="game-over-score">Score: <span id="finalScore">0</span></div>
-      <button class="game-restart-btn" id="restartBtn">Play again</button>
+      <button class="game-restart-btn lggc" id="restartBtn">Play again</button>
     </div>
   </div>
 </div>
@@ -644,8 +644,17 @@
     align-items: center;
     gap: var(--space-lg);
     padding: var(--space-3xl);
-    background: var(--color-surface);
+    background: rgba(255, 255, 255, 0.72);
     border-radius: var(--radius-xl);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.12);
+  }
+
+  [data-theme="dark"] .game-over-card {
+    background: rgba(30, 30, 32, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   .game-over-title {
@@ -660,25 +669,29 @@
   }
 
   .game-restart-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    --lggc-bg: rgba(0, 0, 0, 0.85);
+    --lggc-radius: 980px;
     padding: 12px 28px;
     font-size: var(--text-base);
-    font-weight: 500;
+    font-weight: 600;
     font-family: var(--font-sans);
-    border-radius: 980px;
-    border: none;
     cursor: pointer;
     letter-spacing: -0.01em;
-    background: var(--color-text);
-    color: var(--color-bg);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: #fff;
+  }
+
+  [data-theme="dark"] .game-restart-btn {
+    --lggc-bg: rgba(255, 255, 255, 0.85);
+    color: #000;
   }
 
   .game-restart-btn:hover {
+    --lggc-bg: rgba(0, 0, 0, 0.95);
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  [data-theme="dark"] .game-restart-btn:hover {
+    --lggc-bg: rgba(255, 255, 255, 0.95);
   }
 
   .game-restart-btn:active { transform: scale(0.97); }
