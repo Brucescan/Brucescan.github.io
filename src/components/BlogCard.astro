@@ -15,15 +15,21 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
   month: "long",
   day: "numeric",
 });
+
+const postDate = new Date(date);
+const daysAgo = Math.floor((Date.now() - postDate.getTime()) / (1000 * 60 * 60 * 24));
+const isNew = daysAgo < 7;
 ---
 
-<article class="blog-card">
+<article class="blog-card" data-tilt>
+  <div class="blog-card-glare"></div>
   <a href={`/blog/${slug}`} class="blog-card-link">
     <div class="blog-card-content">
       <div class="blog-card-meta">
         <time datetime={date}>{formattedDate}</time>
         {readingTime && <span class="dot">·</span>}
         {readingTime && <span>{readingTime}</span>}
+        {isNew && <span class="blog-card-badge">New</span>}
       </div>
       <h3 class="blog-card-title">{title}</h3>
       <p class="blog-card-desc">{description}</p>
@@ -46,16 +52,59 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
   </a>
 </article>
 
+<script>
+  (function() {
+    document.querySelectorAll('[data-tilt]').forEach(function(card) {
+      var glare = card.querySelector('.blog-card-glare');
+      if (!glare) return;
+
+      card.addEventListener('mousemove', function(e) {
+        var rect = card.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+        var centerX = rect.width / 2;
+        var centerY = rect.height / 2;
+
+        // Tilt: -8 to 8 degrees
+        var tiltX = ((y - centerY) / centerY) * -6;
+        var tiltY = ((x - centerX) / centerX) * 6;
+
+        card.style.transform = 'perspective(800px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateY(-4px)';
+        card.style.transition = 'transform 0.1s ease-out, box-shadow 0.3s ease, border-color 0.3s ease';
+
+        // Glare follows cursor
+        var glareX = (x / rect.width) * 100;
+        var glareY = (y / rect.height) * 100;
+        glare.style.background = 'radial-gradient(circle at ' + glareX + '% ' + glareY + '%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 70%)';
+        glare.style.opacity = '1';
+      });
+
+      card.addEventListener('mouseleave', function() {
+        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+        card.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease';
+        glare.style.opacity = '0';
+      });
+
+      card.addEventListener('mouseenter', function() {
+        card.style.transition = 'transform 0.1s ease-out, box-shadow 0.3s ease, border-color 0.3s ease';
+      });
+    });
+  })();
+</script>
+
 <style>
   .blog-card {
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(0, 0, 0, 0.08);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease;
     overflow: hidden;
+    position: relative;
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.04),
       0 4px 12px rgba(0, 0, 0, 0.04);
+    transform-style: preserve-3d;
+    perspective: 800px;
   }
 
   [data-theme="dark"] .blog-card {
@@ -67,22 +116,34 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
   }
 
   .blog-card:hover {
-    transform: translateY(-6px);
-    background: rgba(255, 255, 255, 0.88);
     border-color: rgba(0, 0, 0, 0.14);
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.06),
-      0 12px 32px rgba(0, 0, 0, 0.1),
-      0 24px 56px rgba(0, 0, 0, 0.06);
+      0 16px 40px rgba(0, 0, 0, 0.12),
+      0 28px 64px rgba(0, 0, 0, 0.08);
   }
 
   [data-theme="dark"] .blog-card:hover {
-    background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.18);
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.3),
-      0 12px 32px rgba(0, 0, 0, 0.35),
-      0 24px 56px rgba(0, 0, 0, 0.25);
+      0 16px 40px rgba(0, 0, 0, 0.4),
+      0 28px 64px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Dynamic glare overlay */
+  .blog-card-glare {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    mix-blend-mode: overlay;
+  }
+
+  [data-theme="dark"] .blog-card-glare {
+    mix-blend-mode: soft-light;
   }
 
   .blog-card-link {
@@ -103,6 +164,7 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
+    position: relative;
   }
 
   .blog-card-meta {
@@ -116,6 +178,31 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
 
   .dot {
     color: var(--color-text-tertiary);
+  }
+
+  /* New badge */
+  .blog-card-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    background: linear-gradient(135deg, #0071e3, #40a9ff);
+    border-radius: 980px;
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+
+  [data-theme="dark"] .blog-card-badge {
+    background: linear-gradient(135deg, #2997ff, #5eb8ff);
+    color: #000;
+  }
+
+  @keyframes badgePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
   }
 
   .blog-card-title {

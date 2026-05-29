@@ -137,6 +137,47 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ══════════════════════════════════════════
+   Custom glass scrollbar
+   ══════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"]::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+[data-theme="dark"] * {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
 body {
   font-family: var(--font-sans);
   font-size: var(--text-base);
@@ -480,34 +521,62 @@ img {
 }
 
 /* Back to top */
+.back-to-top-wrap {
+  position: fixed;
+  bottom: var(--space-xl);
+  right: var(--space-xl);
+  width: 48px;
+  height: 48px;
+  z-index: 50;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.back-to-top-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .back-to-top {
   --lggc-padding: 0;
   --lggc-radius: 50%;
   --lggc-blur: 6px;
-  position: fixed;
-  bottom: var(--space-xl);
-  right: var(--space-xl);
+  position: absolute;
+  inset: 4px;
   width: 40px;
   height: 40px;
   min-width: 40px;
   min-height: 40px;
   color: var(--color-text-secondary);
   cursor: pointer;
-  opacity: 0;
-  transform: translateY(12px);
-  pointer-events: none;
-  z-index: 50;
-}
-
-.back-to-top.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
 }
 
 .back-to-top:hover {
   color: var(--color-text);
-  transform: translateY(-2px);
+}
+
+/* SVG progress ring */
+.progress-ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
 }
 
 .back-to-top svg {
@@ -1235,4 +1304,156 @@ blockquote.callout-tip {
 .hamburger-btn.open .hamburger-line::after {
   top: 0;
   transform: rotate(-45deg);
+}
+
+/* ══════════════════════════════════════════
+   Glass decorative orbs
+   ══════════════════════════════════════════ */
+.glass-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  opacity: 0.4;
+}
+
+[data-theme="dark"] .glass-orb {
+  border-color: rgba(255, 255, 255, 0.08);
+  opacity: 0.25;
+}
+
+.orb-1 {
+  width: 200px;
+  height: 200px;
+  top: 15%;
+  right: -60px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(0,113,227,0.08));
+  animation: orbFloat1 12s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 140px;
+  height: 140px;
+  bottom: 25%;
+  left: -40px;
+  background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.25), rgba(255,100,150,0.06));
+  animation: orbFloat2 15s ease-in-out infinite;
+}
+
+.orb-3 {
+  width: 100px;
+  height: 100px;
+  top: 60%;
+  right: 20%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2), rgba(100,180,255,0.06));
+  animation: orbFloat3 10s ease-in-out infinite;
+}
+
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-20px, 30px) scale(1.08); }
+  66% { transform: translate(10px, -20px) scale(0.94); }
+}
+
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.1); }
+}
+
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-15px, -25px) scale(1.05); }
+  75% { transform: translate(20px, 15px) scale(0.95); }
+}
+
+/* ══════════════════════════════════════════
+   View Transitions
+   ══════════════════════════════════════════ */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 0.3s ease-out both fadeOutSlide;
+}
+
+::view-transition-new(root) {
+  animation: 0.4s cubic-bezier(0.16, 1, 0.3, 1) both fadeInSlide;
+}
+
+@keyframes fadeOutSlide {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ══════════════════════════════════════════
+   Keyboard shortcut hint
+   ══════════════════════════════════════════ */
+.kbd-hint {
+  position: fixed;
+  bottom: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 40;
+  padding: 8px 16px;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 980px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="dark"] .kbd-hint {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.kbd-hint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.kbd-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+[data-theme="dark"] .kbd-hint kbd {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-tertiary);
 }

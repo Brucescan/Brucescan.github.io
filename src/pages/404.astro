@@ -5,42 +5,105 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 <BaseLayout title="Page not found">
   <section class="not-found">
     <div class="container">
-      <div class="nf-content">
+      <div class="nf-card lggc">
         <span class="nf-code">404</span>
-        <h1 class="nf-title">Page not found</h1>
-        <p class="nf-desc">The page you're looking for doesn't exist or has been moved.</p>
-        <a href="/" class="btn btn-primary">Back home</a>
+        <h1 class="nf-title">Lost in the glass</h1>
+        <p class="nf-desc">This page drifted away like a floating orb. Let's get you back.</p>
+        <div class="nf-actions">
+          <a href="/" class="btn btn-primary lggc">Back home</a>
+          <button class="btn btn-secondary lggc" id="nfSearchBtn">Search</button>
+        </div>
       </div>
 
-      <canvas id="nfCat" width="64" height="64" aria-hidden="true"></canvas>
+      <canvas id="nfCat" width="64" height="64" aria-hidden="true" title="Click me!"></canvas>
+      <p class="nf-cat-hint" id="nfCatHint">Click the cat</p>
     </div>
   </section>
 </BaseLayout>
 
-<script>
+<script is:inline>
   (function() {
     var c = document.getElementById("nfCat");
     if (!c) return;
     var ctx = c.getContext("2d");
     if (!ctx) return;
-    // Small idle cat
-    ctx.fillStyle = "#ff9f43"; ctx.fillRect(20,24,24,20);
-    ctx.fillStyle = "#ffbe76"; ctx.fillRect(16,8,32,20);
-    ctx.fillStyle = "#ff9f43"; ctx.fillRect(16,0,8,12); ctx.fillRect(40,0,8,12);
-    ctx.fillStyle = "#fdcb6e"; ctx.fillRect(18,2,4,8);  ctx.fillRect(42,2,4,8);
-    ctx.fillStyle = "#2d3436"; ctx.fillRect(24,14,4,6); ctx.fillRect(36,14,4,6);
-    ctx.fillStyle = "#fff";    ctx.fillRect(26,14,2,2); ctx.fillRect(38,14,2,2);
-    ctx.fillStyle = "#e17055"; ctx.fillRect(30,20,4,3);
-    ctx.fillStyle = "#2d3436"; ctx.fillRect(28,24,8,2);
-    ctx.fillStyle = "#ffbe76"; ctx.fillRect(20,44,10,6); ctx.fillRect(34,44,10,6);
-    ctx.fillStyle = "#ff9f43"; ctx.fillRect(44,28,8,4); ctx.fillRect(48,24,5,10);
+
+    var animFrame = 0;
+    var squished = false;
+
+    function drawCat(squish) {
+      ctx.clearRect(0, 0, 64, 64);
+
+      if (squish) {
+        // Squished / surprised cat
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(18, 40, 28, 12);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(14, 22, 36, 20);
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(14, 10, 10, 14); ctx.fillRect(40, 10, 10, 14);
+        ctx.fillStyle = "#2d3436"; ctx.fillRect(22, 24, 8, 8); ctx.fillRect(34, 24, 8, 8);
+        ctx.fillStyle = "#fff"; ctx.fillRect(24, 25, 4, 4); ctx.fillRect(36, 25, 4, 4);
+        ctx.fillStyle = "#e17055"; ctx.fillRect(28, 36, 8, 4);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(18, 50, 12, 8); ctx.fillRect(34, 50, 12, 8);
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(0, 38, 10, 8); ctx.fillRect(54, 38, 10, 8);
+      } else {
+        // Idle cat
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(20, 24, 24, 20);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(16, 8, 32, 20);
+        ctx.fillStyle = "#ff9f43"; ctx.fillRect(16, 0, 8, 12); ctx.fillRect(40, 0, 8, 12);
+        ctx.fillStyle = "#fdcb6e"; ctx.fillRect(18, 2, 4, 8); ctx.fillRect(42, 2, 4, 8);
+        ctx.fillStyle = "#2d3436"; ctx.fillRect(24, 14, 4, 6); ctx.fillRect(36, 14, 4, 6);
+        ctx.fillStyle = "#fff"; ctx.fillRect(26, 14, 2, 2); ctx.fillRect(38, 14, 2, 2);
+        ctx.fillStyle = "#e17055"; ctx.fillRect(30, 20, 4, 3);
+        ctx.fillStyle = "#2d3436"; ctx.fillRect(28, 24, 8, 2);
+        ctx.fillStyle = "#ffbe76"; ctx.fillRect(20, 44, 10, 6); ctx.fillRect(34, 44, 10, 6);
+
+        // Tail wag
+        var tail = Math.sin(animFrame * 0.15) * 3;
+        ctx.fillStyle = "#ff9f43";
+        ctx.fillRect(42 + tail, 26, 6, 4);
+        ctx.fillRect(44 + tail, 22, 5, 5);
+      }
+    }
+
+    function animate() {
+      animFrame++;
+      drawCat(squished);
+      requestAnimationFrame(animate);
+    }
+
+    drawCat(false);
+    animate();
+
+    // Click interaction
+    var hint = document.getElementById("nfCatHint");
+    c.addEventListener("click", function() {
+      squished = true;
+      if (hint) hint.textContent = "Boop!";
+      setTimeout(function() {
+        squished = false;
+        if (hint) hint.textContent = "Click the cat";
+      }, 400);
+    });
+
+    // Search button
+    var searchBtn = document.getElementById("nfSearchBtn");
+    if (searchBtn) {
+      searchBtn.addEventListener("click", function() {
+        var overlay = document.getElementById("searchOverlay");
+        if (overlay) {
+          overlay.classList.add("active");
+          var input = document.getElementById("searchInput");
+          if (input) input.focus();
+          document.body.style.overflow = "hidden";
+        }
+      });
+    }
   })();
 </script>
 
 <style>
   .not-found {
     padding: var(--space-4xl) 0;
-    min-height: 60vh;
+    min-height: 70vh;
     display: flex;
     align-items: center;
   }
@@ -50,14 +113,23 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-2xl);
+    gap: var(--space-xl);
   }
 
-  .nf-content {
+  .nf-card {
+    --lggc-radius: 28px;
+    --lggc-padding: var(--space-3xl);
+    --lggc-bg: rgba(255, 255, 255, 0.55);
+    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--space-md);
+    max-width: 440px;
+  }
+
+  [data-theme="dark"] .nf-card {
+    --lggc-bg: rgba(255, 255, 255, 0.06);
   }
 
   .nf-code {
@@ -75,19 +147,72 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     font-size: var(--text-2xl);
     font-weight: 600;
     letter-spacing: -0.02em;
+    color: var(--color-text);
   }
 
   .nf-desc {
     font-size: var(--text-base);
     color: var(--color-text-secondary);
-    max-width: 360px;
+    max-width: 320px;
     line-height: 1.6;
+  }
+
+  .nf-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+  }
+
+  .nf-actions .btn {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .nf-actions .btn-primary {
+    --lggc-padding: 10px 24px;
+    --lggc-bg: rgba(0, 0, 0, 0.85);
+    color: #fff;
+  }
+
+  .nf-actions .btn-primary:hover {
+    --lggc-bg: rgba(0, 0, 0, 0.92);
+  }
+
+  [data-theme="dark"] .nf-actions .btn-primary {
+    --lggc-bg: rgba(255, 255, 255, 0.9);
+    color: #000;
+  }
+
+  .nf-actions .btn-secondary {
+    --lggc-padding: 10px 24px;
+    --lggc-bg: rgba(255, 255, 255, 0.6);
+    color: var(--color-text);
+  }
+
+  [data-theme="dark"] .nf-actions .btn-secondary {
+    --lggc-bg: rgba(255, 255, 255, 0.1);
   }
 
   #nfCat {
     image-rendering: pixelated;
     width: 80px;
     height: 80px;
-    opacity: 0.5;
+    cursor: pointer;
+    transition: transform var(--transition-spring);
+    opacity: 0.6;
+  }
+
+  #nfCat:hover {
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+
+  .nf-cat-hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: -8px;
   }
 </style>

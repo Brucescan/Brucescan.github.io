@@ -126,11 +126,25 @@ import { site } from "../data/site";
     font-size: var(--text-4xl);
     font-weight: 700;
     letter-spacing: -0.04em;
-    background: linear-gradient(135deg, var(--color-text) 0%, var(--color-hero-gradient-end) 100%);
+    line-height: 1.1;
+    background: linear-gradient(
+      135deg,
+      var(--color-text) 0%,
+      var(--color-hero-gradient-end) 40%,
+      var(--color-accent) 50%,
+      var(--color-hero-gradient-end) 60%,
+      var(--color-text) 100%
+    );
+    background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    line-height: 1.1;
+    animation: titleShimmer 6s ease-in-out infinite;
+  }
+
+  @keyframes titleShimmer {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 200% center; }
   }
 
   .hero-tagline {

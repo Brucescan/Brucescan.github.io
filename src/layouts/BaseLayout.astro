@@ -80,6 +80,11 @@ const searchIndex = allPosts.map((p) => ({
   <body>
     <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
 
+    <!-- Decorative glass orbs -->
+    <div class="glass-orb orb-1" aria-hidden="true"></div>
+    <div class="glass-orb orb-2" aria-hidden="true"></div>
+    <div class="glass-orb orb-3" aria-hidden="true"></div>
+
     <!-- Search overlay -->
     <div class="search-overlay" id="searchOverlay" role="dialog" aria-label="Search">
       <div class="search-dialog">
@@ -96,17 +101,27 @@ const searchIndex = allPosts.map((p) => ({
       </div>
     </div>
 
+    <div class="kbd-hint" id="kbdHint" aria-hidden="true">
+      Press <kbd>/</kbd> to search
+    </div>
+
     <Header />
     <main>
       <slot />
     </main>
     <Footer />
 
-    <button class="back-to-top lggc" id="backToTop" aria-label="Back to top">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M8 13V3M3 8l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="back-to-top-wrap" id="backToTopWrap">
+      <svg class="progress-ring" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+        <circle class="progress-ring-bg" cx="24" cy="24" r="20" />
+        <circle class="progress-ring-fill" cx="24" cy="24" r="20" id="progressRing" />
       </svg>
-    </button>
+      <button class="back-to-top lggc" id="backToTop" aria-label="Back to top">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 13V3M3 8l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
 
     <script type="application/json" id="searchIndex">
       {JSON.stringify(searchIndex)}
@@ -146,6 +161,18 @@ const searchIndex = allPosts.map((p) => ({
             if (t[i] === q[qi]) qi++;
           }
           return qi === q.length;
+        }
+
+        // ── Keyboard hint ──
+        var kbdHint = $("kbdHint");
+        if (kbdHint && !sessionStorage.getItem("kbd-hint-shown")) {
+          setTimeout(function() {
+            kbdHint.classList.add("show");
+            setTimeout(function() {
+              kbdHint.classList.remove("show");
+            }, 5000);
+          }, 1500);
+          sessionStorage.setItem("kbd-hint-shown", "1");
         }
 
         // ── Search ──
@@ -254,9 +281,11 @@ const searchIndex = allPosts.map((p) => ({
         }
 
         // ── Back to top ──
-        if (backToTop) {
+        var backToTopWrap = $("backToTopWrap");
+        if (backToTop && backToTopWrap) {
           window.addEventListener("scroll", function() {
-            backToTop.classList.toggle("visible", window.scrollY > 400);
+            var visible = window.scrollY > 400;
+            backToTopWrap.classList.toggle("visible", visible);
           }, { passive: true });
           backToTop.addEventListener("click", function() {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -289,20 +318,18 @@ const searchIndex = allPosts.map((p) => ({
           });
         });
 
-        // ── Magnetic tilt for cards ──
-        document.querySelectorAll(".blog-card, .btn-primary").forEach(function(el) {
-          el.addEventListener("mousemove", function(e) {
-            var rect = el.getBoundingClientRect();
-            var x = (e.clientX - rect.left) / rect.width - 0.5;
-            var y = (e.clientY - rect.top) / rect.height - 0.5;
-            el.style.transform = "perspective(800px) rotateY(" + (x * 6) + "deg) rotateX(" + (-y * 6) + "deg) translateY(-4px)";
-            el.style.transition = "transform 0.1s ease-out, box-shadow 0.3s ease";
-          });
-          el.addEventListener("mouseleave", function() {
-            el.style.transform = "perspective(800px) rotateY(0deg) rotateX(0deg) translateY(0px)";
-            el.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease";
-          });
-        });
+        // ── Progress ring ──
+        var progressRing = document.getElementById("progressRing");
+        if (progressRing) {
+          var circumference = 2 * Math.PI * 20; // r=20
+          progressRing.style.strokeDasharray = circumference;
+          progressRing.style.strokeDashoffset = circumference;
+          window.addEventListener("scroll", function() {
+            var h = document.documentElement.scrollHeight - window.innerHeight;
+            var pct = h > 0 ? window.scrollY / h : 0;
+            progressRing.style.strokeDashoffset = circumference - pct * circumference;
+          }, { passive: true });
+        }
 
         // ── Ripple on buttons ──
         document.querySelectorAll(".btn-primary, .btn-secondary, .tag-pill").forEach(function(btn) {
