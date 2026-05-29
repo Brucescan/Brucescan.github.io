@@ -59,47 +59,48 @@ import { site } from "../data/site";
   }
 
   .hero-avatar {
-    width: 88px;
-    height: 88px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     position: relative;
   }
 
-  /* Outer glass ring */
+  /* Glass ring behind avatar */
   .hero-avatar::before {
     content: "";
     position: absolute;
-    inset: -6px;
+    inset: -4px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(6px) saturate(150%);
-    -webkit-backdrop-filter: blur(6px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 0 0 4px rgba(255, 255, 255, 0.1),
+      0 2px 16px rgba(0, 0, 0, 0.06);
     z-index: 0;
   }
 
   [data-theme="dark"] .hero-avatar::before {
-    background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow:
+      0 0 0 4px rgba(255, 255, 255, 0.04),
+      0 2px 16px rgba(0, 0, 0, 0.3);
   }
 
-  /* Spinning glow ring — on top of glass ring */
+  /* Spinning accent glow */
   .hero-avatar::after {
     content: "";
     position: absolute;
-    inset: -6px;
+    inset: -5px;
     border-radius: 50%;
-    background: conic-gradient(from 0deg, var(--color-accent), transparent 40%, transparent 60%, var(--color-accent));
-    opacity: 0.15;
-    animation: avatarSpin 5s linear infinite;
+    background: conic-gradient(from 0deg, var(--color-accent), transparent 35%, transparent 65%, var(--color-accent));
+    opacity: 0.2;
+    animation: avatarSpin 4s linear infinite;
     z-index: 0;
-    filter: blur(4px);
   }
 
   [data-theme="dark"] .hero-avatar::after {
-    opacity: 0.22;
+    opacity: 0.3;
   }
 
   @keyframes avatarSpin {
@@ -107,15 +108,14 @@ import { site } from "../data/site";
   }
 
   .hero-avatar img {
-    width: 76px;
-    height: 76px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     display: block;
     position: relative;
     z-index: 1;
     transition: transform var(--transition-spring);
     object-fit: cover;
-    margin: 6px;
   }
 
   .hero-avatar:hover img {

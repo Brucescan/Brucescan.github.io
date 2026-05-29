@@ -2,6 +2,13 @@
 import { site } from "../data/site";
 
 const currentPath = Astro.url.pathname;
+
+function isActive(href: string): boolean {
+  if (href === "/") return currentPath === "/";
+  if (href === "/#posts") return currentPath.startsWith("/blog") || currentPath.startsWith("/tags");
+  if (href === "/#about") return false; // scroll-spy only on homepage
+  return currentPath === href;
+}
 ---
 
 <header class="header">
@@ -16,7 +23,8 @@ const currentPath = Astro.url.pathname;
           site.nav.map((item) => (
             <a
               href={item.href}
-              class:list={["nav-link lggc", { active: currentPath === item.href }]}
+              data-nav={item.label.toLowerCase()}
+              class:list={["nav-link lggc", { active: isActive(item.href) }]}
             >
               {item.label}
             </a>
@@ -69,14 +77,15 @@ const currentPath = Astro.url.pathname;
 
 <script>
   (function() {
+    // Mobile nav
     var btn = document.getElementById("hamburgerBtn");
     var overlay = document.getElementById("mobileNavOverlay");
     var panel = document.getElementById("mobileNavPanel");
-    if (!btn || !overlay || !panel) return;
 
     var isOpen = false;
 
     function open() {
+      if (!btn || !overlay || !panel) return;
       isOpen = true;
       btn.classList.add("open");
       btn.setAttribute("aria-expanded", "true");
@@ -87,6 +96,7 @@ const currentPath = Astro.url.pathname;
     }
 
     function close() {
+      if (!btn || !overlay || !panel) return;
       isOpen = false;
       btn.classList.remove("open");
       btn.setAttribute("aria-expanded", "false");
@@ -96,22 +106,42 @@ const currentPath = Astro.url.pathname;
       document.body.style.overflow = "";
     }
 
-    btn.addEventListener("click", function() {
-      isOpen ? close() : open();
-    });
+    if (btn && overlay && panel) {
+      btn.addEventListener("click", function() {
+        isOpen ? close() : open();
+      });
+      overlay.addEventListener("click", close);
+      document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && isOpen) close();
+      });
+      panel.querySelectorAll("a").forEach(function(link) {
+        link.addEventListener("click", close);
+      });
+    }
 
-    overlay.addEventListener("click", close);
+    // Scroll-spy for homepage nav (/#posts, /#about)
+    var postsSection = document.getElementById("posts");
+    var aboutSection = document.getElementById("about");
+    if (postsSection || aboutSection) {
+      var navLinks = document.querySelectorAll("[data-nav]");
+      function updateNav() {
+        var scrollY = window.scrollY + 80; // offset for header
+        var active = "home";
 
-    document.addEventListener("keydown", function(e) {
-      if (e.key === "Escape" && isOpen) {
-        close();
+        if (aboutSection && scrollY >= aboutSection.offsetTop) {
+          active = "about";
+        } else if (postsSection && scrollY >= postsSection.offsetTop) {
+          active = "blog";
+        }
+
+        navLinks.forEach(function(link) {
+          var navName = link.getAttribute("data-nav");
+          link.classList.toggle("active", navName === active);
+        });
       }
-    });
-
-    // Close on link click
-    panel.querySelectorAll("a").forEach(function(link) {
-      link.addEventListener("click", close);
-    });
+      window.addEventListener("scroll", updateNav, { passive: true });
+      updateNav();
+    }
   })();
 </script>
 
