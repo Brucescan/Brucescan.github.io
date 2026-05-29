@@ -84,16 +84,22 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       }, 400);
     });
 
-    // Search button
+    // Search button — trigger via BaseLayout's search trigger
     var searchBtn = document.getElementById("nfSearchBtn");
     if (searchBtn) {
       searchBtn.addEventListener("click", function() {
-        var overlay = document.getElementById("searchOverlay");
-        if (overlay) {
-          overlay.classList.add("active");
-          var input = document.getElementById("searchInput");
-          if (input) input.focus();
-          document.body.style.overflow = "hidden";
+        var trigger = document.getElementById("searchTrigger");
+        if (trigger) {
+          trigger.click();
+        } else {
+          // Fallback
+          var overlay = document.getElementById("searchOverlay");
+          if (overlay) {
+            overlay.classList.add("active");
+            var input = document.getElementById("searchInput");
+            if (input) input.focus();
+            document.body.style.overflow = "hidden";
+          }
         }
       });
     }
