@@ -323,12 +323,13 @@ const searchIndex = allPosts.map((p) => ({
         if (progressRing) {
           var circumference = 2 * Math.PI * 20; // r=20
           progressRing.style.strokeDasharray = circumference;
-          progressRing.style.strokeDashoffset = circumference;
-          window.addEventListener("scroll", function() {
+          function updateRing() {
             var h = document.documentElement.scrollHeight - window.innerHeight;
-            var pct = h > 0 ? window.scrollY / h : 0;
+            var pct = h > 0 ? Math.min(window.scrollY / h, 1) : 0;
             progressRing.style.strokeDashoffset = circumference - pct * circumference;
-          }, { passive: true });
+          }
+          updateRing(); // initial call
+          window.addEventListener("scroll", updateRing, { passive: true });
         }
 
         // ── Ripple on buttons ──
