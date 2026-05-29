@@ -432,31 +432,11 @@ const nextPost = currentIndex < allPosts.length - 1
   }
 
   .post-body :global(blockquote) {
-    border-left: none;
-    padding: var(--space-lg) var(--space-xl);
+    border-left: 3px solid var(--color-accent);
+    padding-left: var(--space-lg);
     margin-bottom: var(--space-lg);
     color: var(--color-text-secondary);
     font-style: italic;
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: var(--radius-md);
-    position: relative;
-  }
-
-  .post-body :global(blockquote)::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--color-accent);
-    border-radius: 3px 0 0 3px;
-  }
-
-  [data-theme="dark"] .post-body :global(blockquote) {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
   }
 
   .post-body :global(blockquote p) {
