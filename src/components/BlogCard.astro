@@ -49,42 +49,40 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
 <style>
   .blog-card {
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
     box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.04),
-      0 4px 16px rgba(0, 0, 0, 0.04);
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 4px 12px rgba(0, 0, 0, 0.04);
   }
 
   [data-theme="dark"] .blog-card {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
     box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.2),
-      0 4px 16px rgba(0, 0, 0, 0.2);
+      0 1px 3px rgba(0, 0, 0, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.25);
   }
 
   .blog-card:hover {
     transform: translateY(-6px);
-    background: rgba(255, 255, 255, 0.55);
-    border-color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.88);
+    border-color: rgba(0, 0, 0, 0.14);
     box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.06),
-      0 8px 24px rgba(0, 0, 0, 0.1),
-      0 20px 48px rgba(0, 0, 0, 0.06);
+      0 2px 6px rgba(0, 0, 0, 0.06),
+      0 12px 32px rgba(0, 0, 0, 0.1),
+      0 24px 56px rgba(0, 0, 0, 0.06);
   }
 
   [data-theme="dark"] .blog-card:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
     box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.3),
-      0 8px 24px rgba(0, 0, 0, 0.4),
-      0 20px 48px rgba(0, 0, 0, 0.3);
+      0 2px 6px rgba(0, 0, 0, 0.3),
+      0 12px 32px rgba(0, 0, 0, 0.35),
+      0 24px 56px rgba(0, 0, 0, 0.25);
   }
 
   .blog-card-link {
@@ -150,14 +148,12 @@ const formattedDate = new Date(date).toLocaleDateString("zh-CN", {
     font-size: var(--text-xs);
     font-weight: 500;
     color: var(--color-text-secondary);
-    background: rgba(0, 0, 0, 0.04);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 980px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
   }
 
   [data-theme="dark"] .blog-card-tag {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .blog-card-cta {

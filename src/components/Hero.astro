@@ -59,49 +59,67 @@ import { site } from "../data/site";
   }
 
   .hero-avatar {
-    width: 80px;
-    height: 80px;
+    width: 88px;
+    height: 88px;
     border-radius: 50%;
-    overflow: visible;
     position: relative;
-    padding: 4px;
   }
 
+  /* Outer glass ring */
   .hero-avatar::before {
     content: "";
     position: absolute;
-    inset: 0;
+    inset: -6px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(8px) saturate(160%);
-    -webkit-backdrop-filter: blur(8px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.06),
-      0 8px 24px rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(6px) saturate(150%);
+    -webkit-backdrop-filter: blur(6px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    z-index: 0;
   }
 
   [data-theme="dark"] .hero-avatar::before {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.3),
-      0 8px 24px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Spinning glow ring — on top of glass ring */
+  .hero-avatar::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--color-accent), transparent 40%, transparent 60%, var(--color-accent));
+    opacity: 0.15;
+    animation: avatarSpin 5s linear infinite;
+    z-index: 0;
+    filter: blur(4px);
+  }
+
+  [data-theme="dark"] .hero-avatar::after {
+    opacity: 0.22;
+  }
+
+  @keyframes avatarSpin {
+    to { transform: rotate(360deg); }
   }
 
   .hero-avatar img {
-    width: 72px;
-    height: 72px;
+    width: 76px;
+    height: 76px;
     border-radius: 50%;
     display: block;
     position: relative;
     z-index: 1;
     transition: transform var(--transition-spring);
     object-fit: cover;
+    margin: 6px;
   }
 
   .hero-avatar:hover img {
-    transform: scale(1.08);
+    transform: scale(1.06);
   }
 
   .hero-title {
@@ -130,39 +148,29 @@ import { site } from "../data/site";
     margin-top: var(--space-lg);
   }
 
+  /* Minimal btn — lggc handles padding, radius, border, and transitions */
   .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 28px;
     font-size: var(--text-base);
     font-weight: 500;
-    border-radius: 980px;
-    border: none;
     cursor: pointer;
     text-decoration: none;
-    transition: all var(--transition-spring);
     letter-spacing: -0.01em;
-    position: relative;
-    overflow: hidden;
   }
 
   .btn-primary {
+    --lggc-padding: 12px 28px;
     --lggc-bg: rgba(0, 0, 0, 0.85);
-    --lggc-border: rgba(0, 0, 0, 0.12);
     color: #fff;
     font-weight: 600;
   }
 
   .btn-primary:hover {
-    --lggc-bg: rgba(0, 0, 0, 0.9);
+    --lggc-bg: rgba(0, 0, 0, 0.92);
     color: #fff;
-    transform: translateY(-2px) scale(1.02);
   }
 
   [data-theme="dark"] .btn-primary {
     --lggc-bg: rgba(255, 255, 255, 0.9);
-    --lggc-border: rgba(255, 255, 255, 0.15);
     color: #000;
   }
 
@@ -172,16 +180,24 @@ import { site } from "../data/site";
   }
 
   .btn-secondary {
+    --lggc-padding: 12px 28px;
     --lggc-bg: rgba(255, 255, 255, 0.6);
-    --lggc-border: rgba(0, 0, 0, 0.12);
     color: var(--color-text);
     font-weight: 500;
   }
 
-  [data-theme="dark"] .btn-secondary {
-    --lggc-bg: rgba(255, 255, 255, 0.08);
-    --lggc-border: rgba(255, 255, 255, 0.12);
+  .btn-secondary:hover {
+    --lggc-bg: rgba(255, 255, 255, 0.75);
   }
+
+  [data-theme="dark"] .btn-secondary {
+    --lggc-bg: rgba(255, 255, 255, 0.1);
+  }
+
+  [data-theme="dark"] .btn-secondary:hover {
+    --lggc-bg: rgba(255, 255, 255, 0.16);
+  }
+</style>
 </style>
 
 <script>

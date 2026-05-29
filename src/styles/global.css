@@ -765,30 +765,7 @@ img {
   100% { transform: translate(10px, -10px) scale(1.05); }
 }
 
-/* ── Hero avatar glow ring ── */
-.hero-avatar {
-  position: relative;
-}
-
-.hero-avatar::after {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, var(--color-accent), transparent 40%, transparent 60%, var(--color-accent));
-  opacity: 0.15;
-  animation: avatarSpin 5s linear infinite;
-  z-index: -1;
-  filter: blur(6px);
-}
-
-[data-theme="dark"] .hero-avatar::after {
-  opacity: 0.25;
-}
-
-@keyframes avatarSpin {
-  to { transform: rotate(360deg); }
-}
+/* ── Hero avatar glow ring — scoped in Hero.astro ── */
 
 /* ── Timeline view ── */
 .view-toggle {
@@ -846,16 +823,14 @@ img {
 }
 
 .blog-list-item:hover {
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.1);
   transform: translateX(4px);
 }
 
 [data-theme="dark"] .blog-list-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .blog-list-date {
@@ -949,31 +924,29 @@ img {
   display: block;
   padding: var(--space-lg);
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   text-decoration: none;
   color: inherit;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  background: rgba(255, 255, 255, 0.55);
 }
 
 [data-theme="dark"] .related-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .related-card:hover {
-  border-color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.78);
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .related-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .related-card-title {
