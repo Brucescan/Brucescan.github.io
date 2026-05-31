@@ -72,11 +72,11 @@ const isNew = daysAgo < 21;
         card.style.transform = 'perspective(800px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateY(-4px)';
         card.style.transition = 'transform 0.1s ease-out, box-shadow 0.3s ease, border-color 0.3s ease';
 
-        // Glare follows cursor — subtle blue-tinted glow visible in both themes
+        // Glare follows cursor — warm orange-tinted glow (Claude style)
         var glareX = (x / rect.width) * 100;
         var glareY = (y / rect.height) * 100;
         var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        var tint = isDark ? 'rgba(180,210,255,0.25)' : 'rgba(180,210,255,0.35)';
+        var tint = isDark ? 'rgba(255,200,160,0.2)' : 'rgba(255,200,160,0.25)';
         glare.style.background = 'radial-gradient(circle 400px at ' + glareX + '% ' + glareY + '%, ' + tint + ' 0%, transparent 70%)';
         glare.style.opacity = '1';
       });
