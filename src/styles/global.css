@@ -921,6 +921,7 @@ img {
 }
 
 .blog-list-title {
+  font-family: var(--font-serif);
   font-weight: 600;
   font-size: var(--text-base);
   line-height: 1.4;
@@ -1030,6 +1031,7 @@ img {
 }
 
 .related-card-title {
+  font-family: var(--font-serif);
   font-weight: 600;
   font-size: var(--text-sm);
   margin-bottom: 4px;
