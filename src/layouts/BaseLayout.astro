@@ -15,8 +15,11 @@ const pageDesc = description ?? site.description;
 const pageUrl = new URL(Astro.url.pathname, site.url).href;
 const ogImg = ogImage ? new URL(ogImage, site.url).href : new URL("/images/og.jpg", site.url).href;
 
-const allPosts = await getCollection("blog");
-const searchData = allPosts.map(p => ({
+const allPosts2 = await getCollection("blog");
+const tagSet = new Set<string>();
+for (const p of allPosts2) for (const t of p.data.tags) tagSet.add(t);
+const firstTag = Array.from(tagSet).sort()[0]?.toLowerCase() ?? '';
+const searchData = allPosts2.map(p => ({
   id: p.id, title: p.data.title, description: p.data.description,
   date: p.data.date.toISOString(),
 }));
@@ -61,8 +64,8 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
       <nav class="cosmic-nav" id="cosmicNav">
         <a href="/" class:list={[{active:isActive('/')}]}>Home</a>
-        <a href="/blog/c_note" class:list={[{active:isActive('/blog')}]}>Scrolls</a>
-        <a href="/tags/c++" class:list={[{active:isActive('/tags')}]}>Constellations</a>
+        <a href={`/blog/${searchData[0]?.id ?? ''}`} class:list={[{active:isActive('/blog')}]}>Scrolls</a>
+        <a href={`/tags/${firstTag}`} class:list={[{active:isActive('/tags')}]}>Constellations</a>
         <a href="https://github.com/brucescan" target="_blank" rel="noopener">GitHub</a>
       </nav>
       <div class="cosmic-tools">

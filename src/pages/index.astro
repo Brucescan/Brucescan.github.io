@@ -28,27 +28,26 @@ function getSpectral(tags: string[]) {
   return {color:'#ffe8c0',glow:'rgba(255,232,192,0.4)',size:0.95};
 }
 
-// ── Fermat spiral positions ──
-const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~137.5°
-const scale = 62; // pixels between rings
+// ── Deterministic hash for stable star positions ──
+function hashStr(s:string):number{let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
+
+// ── Fermat spiral ──
+const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+const scale = 50; // tighter spiral for 4 articles
 const stars = sortedPosts.map((post, i) => {
   const spectral = getSpectral(post.data.tags);
   const r = scale * Math.sqrt(i + 1);
   const theta = (i + 1) * goldenAngle;
-  // Add slight randomness
-  const jitter = (Math.random() - 0.5) * 20;
-  const rj = r + jitter;
-  const tj = theta + (Math.random() - 0.5) * 0.3;
+  // Deterministic jitter from article ID
+  const h = hashStr(post.id);
+  const jitterR = (((h % 100) / 100) - 0.5) * 16;
+  const jitterT = (((hashStr(post.id+'t') % 100) / 100) - 0.5) * 0.25;
   return {
-    id: post.id,
-    title: post.data.title,
-    desc: post.data.description,
+    id: post.id, title: post.data.title, desc: post.data.description,
     date: post.data.date,
-    x: Math.cos(tj) * rj,
-    y: Math.sin(tj) * rj,
-    color: spectral.color,
-    glow: spectral.glow,
-    size: spectral.size,
+    x: Math.round(Math.cos(theta + jitterT) * (r + jitterR)),
+    y: Math.round(Math.sin(theta + jitterT) * (r + jitterR)),
+    color: spectral.color, glow: spectral.glow, size: spectral.size,
     tags: post.data.tags,
   };
 });
@@ -92,15 +91,15 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
       ))}
     </div>
 
-    <!-- Constellation lines (decorative, SVG overlay) -->
-    <svg class="constellations" id="constellations" viewBox="-400 -400 800 800" aria-hidden="true">
+    <!-- Constellation lines (SVG overlay, same coordinate space as stars) -->
+    <svg class="constellations" viewBox="-200 -200 400 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {stars.slice(0, -1).map((star, i) => {
-        // Connect nearby stars
+        // Connect sequential stars if nearby
         const next = stars[i + 1];
         const dx = next.x - star.x, dy = next.y - star.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 130) {
-          return <line x1={star.x} y1={star.y} x2={next.x} y2={next.y} stroke="rgba(255,208,102,0.08)" stroke-width="0.5" />;
+        if (dist < 110) {
+          return <line x1={star.x} y1={star.y} x2={next.x} y2={next.y} stroke="rgba(255,208,102,0.12)" stroke-width="1" vector-effect="non-scaling-stroke"/>;
         }
         return null;
       })}
@@ -165,8 +164,8 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
 
   /* ── STAR FIELD ── */
   .star-field{
-    position:relative;width:800px;height:800px;
-    max-width:90vw;max-height:90vw;aspect-ratio:1;
+    position:relative;width:min(600px,90vw);height:min(600px,90vw);
+    aspect-ratio:1;
   }
 
   .celestial-body{
@@ -220,8 +219,8 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
   /* ── CONSTELLATIONS SVG ── */
   .constellations{
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    width:900px;height:900px;max-width:95vw;max-height:95vw;
-    pointer-events:none;z-index:2;opacity:0.6;
+    width:min(600px,90vw);height:min(600px,90vw);
+    pointer-events:none;z-index:2;
   }
 
   /* ── INFO PANEL ── */
