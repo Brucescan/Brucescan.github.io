@@ -193,6 +193,9 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       var konamiSeq=[],konamiCode=[38,38,40,40,37,39,37,39,66,65];
       var konamiFired=false;
       document.addEventListener('keydown',function(e){
+        // Ignore when focused in input/textarea
+        var tag=(e.target.tagName||'').toUpperCase();
+        if(tag==='INPUT'||tag==='TEXTAREA')return;
         if(konamiFired)return;
         konamiSeq.push(e.keyCode);
         if(konamiSeq.length>10)konamiSeq.shift();
@@ -394,16 +397,19 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
         searchSelectedIdx=-1;
         if(!q.trim()){results.innerHTML='<div class="search-empty">Type to discover stars...</div>';loadRecent();return}
         searchRecent.style.display='none';
-        // 42 Easter egg
-        if(q.trim()==='42'){
-          results.innerHTML='<div class="search-empty" style="padding:24px 0"><div style="font-size:3rem;margin-bottom:8px">🐬</div><div style="font-family:var(--font-display);color:var(--star-gold);font-size:var(--text-sm);margin-bottom:4px">"Don\'t Panic."</div><div style="color:var(--text-dim);font-size:var(--text-xs)">The Answer to the Ultimate Question of Life, the Universe, and Everything.</div></div>';
-          return;
-        }
         var qq=q.toLowerCase();
         var m=sIdx.filter(function(p){
           return p.title.toLowerCase().indexOf(qq)!==-1||p.description.toLowerCase().indexOf(qq)!==-1||(p.content||'').toLowerCase().indexOf(qq)!==-1||(p.tags||[]).some(function(t){return t.toLowerCase().indexOf(qq)!==-1});
         });
-        if(!m.length){results.innerHTML='<div class="search-empty">No celestial bodies found.</div>';return}
+        if(!m.length){
+          // 42 Easter egg — only when no real results
+          if(q.trim()==='42'){
+            results.innerHTML='<div class="search-empty" style="padding:24px 0"><div style="font-size:3rem;margin-bottom:8px">🐬</div><div style="font-family:var(--font-display);color:var(--star-gold);font-size:var(--text-sm);margin-bottom:4px">"Don\'t Panic."</div><div style="color:var(--text-dim);font-size:var(--text-xs)">The Answer to the Ultimate Question of Life, the Universe, and Everything.</div></div>';
+          }else{
+            results.innerHTML='<div class="search-empty">No celestial bodies found.</div>';
+          }
+          return;
+        }
         results.innerHTML=m.map(function(p,i){
           var snippet='';
           var body=p.content||'';

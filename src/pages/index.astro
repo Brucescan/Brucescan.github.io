@@ -314,20 +314,20 @@ const deepSpaceObjects = Array.from({length: deepSpaceCount}, (_, i) => {
 
     // ── Core click easter egg ──
     var coreClickCount=0,coreClickTimer=null;
+    var coreGlow=document.querySelector('.core-glow');
     var coreBody=document.querySelector('.core-body');
-    if(coreBody){
-      coreBody.style.pointerEvents='auto';
-      coreBody.style.cursor='pointer';
-      coreBody.addEventListener('click',function(){
+    var coreTarget=coreGlow||coreBody;
+    if(coreTarget){
+      coreTarget.style.pointerEvents='auto';
+      coreTarget.style.cursor='pointer';
+      coreTarget.addEventListener('click',function(){
         coreClickCount++;
         if(coreClickTimer)clearTimeout(coreClickTimer);
         coreClickTimer=setTimeout(function(){coreClickCount=0},1500);
         if(coreClickCount>=7){
           coreClickCount=0;
-          // Burst effect
           var core=document.querySelector('.cosmos-core');
-          if(core)core.style.animation='none';core.offsetHeight;core.style.animation='';
-          // Flash all stars
+          if(core){core.style.animation='none';core.offsetHeight;core.style.animation=''}
           var allStars=document.querySelectorAll('.celestial-body');
           allStars.forEach(function(s,idx){
             s.style.transition='all 0.3s ease';
@@ -336,7 +336,6 @@ const deepSpaceObjects = Array.from({length: deepSpaceCount}, (_, i) => {
             s.style.zIndex='30';
             setTimeout(function(){s.style.transform='';s.style.opacity='';s.style.zIndex=''},500+idx*30);
           });
-          // Pulse the core
           if(coreBody){coreBody.style.transform='scale(3)';coreBody.style.transition='all 0.5s ease';setTimeout(function(){coreBody.style.transform='';coreBody.style.transition=''},600)}
         }
       });
