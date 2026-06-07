@@ -7,165 +7,136 @@ interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
-  appName?: string;
-  appIcon?: string;
 }
 
-const { title, description, ogImage, appName, appIcon } = Astro.props;
-
+const { title, description, ogImage } = Astro.props;
 const pageTitle = title ? `${title} — ${site.title}` : site.title;
-const pageDescription = description ?? site.description;
+const pageDesc = description ?? site.description;
 const pageUrl = new URL(Astro.url.pathname, site.url).href;
-const ogImageUrl = ogImage ? new URL(ogImage, site.url).href : new URL("/images/og.jpg", site.url).href;
+const ogImg = ogImage ? new URL(ogImage, site.url).href : new URL("/images/og.jpg", site.url).href;
 
 const allPosts = await getCollection("blog");
-const searchData = allPosts.map((p) => ({
-  id: p.id,
-  title: p.data.title,
-  description: p.data.description,
+const searchData = allPosts.map(p => ({
+  id: p.id, title: p.data.title, description: p.data.description,
+  date: p.data.date.toISOString(),
 }));
 
-const currentApp = appName ?? "";
-const currentIcon = appIcon ?? "";
+const currentPath = Astro.url.pathname;
+function isActive(href:string){if(href==='/')return currentPath==='/';return currentPath.startsWith(href)}
 ---
 
 <!doctype html>
 <html lang={site.lang} data-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content={pageDescription} />
-  <meta name="generator" content={Astro.generator} />
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content={pageDesc}><meta name="generator" content={Astro.generator}>
   <title>{pageTitle}</title>
-  <link rel="canonical" href={pageUrl} />
-  <link rel="alternate" type="application/rss+xml" title={site.title} href="/rss.xml" />
-  <meta property="og:title" content={pageTitle} />
-  <meta property="og:description" content={pageDescription} />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content={pageUrl} />
-  <meta property="og:image" content={ogImageUrl} />
-  <meta property="og:site_name" content={site.title} />
-  <meta property="og:locale" content={site.lang} />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={pageTitle} />
-  <meta name="twitter:description" content={pageDescription} />
-  <meta name="twitter:image" content={ogImageUrl} />
-  <script is:inline>
-    (function(){var s=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",s||"dark")})();
-  </script>
+  <link rel="canonical" href={pageUrl}>
+  <link rel="alternate" type="application/rss+xml" title={site.title} href="/rss.xml">
+  <meta property="og:title" content={pageTitle}><meta property="og:description" content={pageDesc}>
+  <meta property="og:type" content="website"><meta property="og:url" content={pageUrl}>
+  <meta property="og:image" content={ogImg}><meta property="og:site_name" content={site.title}>
+  <meta property="og:locale" content={site.lang}>
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={pageTitle}><meta name="twitter:description" content={pageDesc}>
+  <meta name="twitter:image" content={ogImg}>
+  <script is:inline>(function(){var s=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",s||"dark")})()</script>
 </head>
 <body>
-  <!-- Boot Screen (first visit only) -->
-  <div class="boot-screen" id="bootScreen" aria-hidden="true">
-    <div class="boot-logo">ARCANE OS</div>
-    <div class="boot-info">
-      <div><span class="dim">BIOS:</span> <span class="ok">OK</span></div>
-      <div><span class="dim">MEM:</span> <span class="ok">640K OK</span></div>
-      <div id="bootCheck"><span class="dim">DISK:</span> Loading<span class="blink">...</span></div>
-    </div>
-    <div class="boot-bar"><div class="boot-bar-inner"></div></div>
-  </div>
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg" aria-hidden="true"></div>
+  <div class="shooting-star" aria-hidden="true"></div>
+  <div class="shooting-star" aria-hidden="true"></div>
+  <div class="shooting-star" aria-hidden="true"></div>
+  <div class="shooting-star" aria-hidden="true"></div>
+  <div class="shooting-star" aria-hidden="true"></div>
 
-  <!-- Page content -->
+  <!-- Header -->
+  <header class="cosmic-header">
+    <div class="cosmic-header-inner">
+      <a href="/" class="cosmic-logo">
+        <div class="cosmic-logo-dot"></div>
+        {site.title}
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+      <nav class="cosmic-nav" id="cosmicNav">
+        <a href="/" class:list={[{active:isActive('/')}]}>Home</a>
+        <a href="/blog/c_note" class:list={[{active:isActive('/blog')}]}>Scrolls</a>
+        <a href="/tags/c++" class:list={[{active:isActive('/tags')}]}>Constellations</a>
+        <a href="https://github.com/brucescan" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="cosmic-tools">
+        <button class="cosmic-tool-btn" id="searchBtn" title="Search (Ctrl+K)" aria-label="Search">🔭</button>
+        <button class="cosmic-tool-btn" id="themeBtn" title="Toggle theme" aria-label="Theme">☀</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content -->
   <slot />
 
-  <!-- Taskbar -->
-  <div class="taskbar">
-    <a href="/" class="taskbar-btn" title="Desktop">⚔ Start</a>
-    {currentApp && (
-      <div class="taskbar-tab active">
-        <span>{currentIcon}</span> {currentApp}
-      </div>
-    )}
-    <div class="taskbar-right">
-      <button class="tray-btn" id="searchBtn" title="Search (Ctrl+K)">🔍</button>
-      <button class="tray-btn" id="themeBtn" title="Toggle theme">🌙</button>
-      <div class="tray" id="clock">00:00</div>
+  <!-- Footer -->
+  <footer class="cosmic-footer">
+    <div class="container">
+      <p style="font-family:var(--font-display);font-size:var(--text-xs);color:var(--star-gold);letter-spacing:0.1em;margin-bottom:8px">
+        ✦ THE COSMIC CODEX ✦
+      </p>
+      <p>&copy; {new Date().getFullYear()} {site.author} &middot; Made of stardust &middot; <a href="/rss.xml">RSS</a></p>
     </div>
-  </div>
+  </footer>
 
   <!-- Search overlay -->
   <div class="search-overlay" id="searchOverlay">
     <div class="search-dialog">
-      <div class="search-titlebar">
-        <span class="search-title">🔍 Find Scroll</span>
-        <button class="search-close" id="searchClose">✕</button>
+      <div class="search-input-wrap">
+        <span class="search-icon">🔭</span>
+        <input class="search-input" id="searchInput" placeholder="Search the cosmos..." autocomplete="off">
+        <span class="search-hint">ESC</span>
       </div>
-      <div class="search-body">
-        <input class="search-input" id="searchInput" placeholder="Type to search..." autocomplete="off">
-        <div class="search-results" id="searchResults">
-          <div class="search-empty">Start typing to find articles...</div>
-        </div>
+      <div class="search-results" id="searchResults">
+        <div class="search-empty">Type to discover stars...</div>
       </div>
     </div>
   </div>
 
-  <!-- Search data -->
   <script type="application/json" id="searchData" set:html={JSON.stringify(searchData)}></script>
 
   <script>
     (function(){
-      // ── Boot ──
-      var boot = document.getElementById('bootScreen');
-      if(boot && !sessionStorage.getItem('booted')){
-        setTimeout(function(){
-          document.getElementById('bootCheck').innerHTML='<span class="dim">DISK:</span> <span class="ok">Ready</span>';
-        },1600);
-        setTimeout(function(){
-          boot.classList.add('off');
-          setTimeout(function(){boot.remove()},500);
-          sessionStorage.setItem('booted','1');
-        },2400);
-      } else if(boot){ boot.remove(); }
-
-      // ── Clock ──
-      function tick(){
-        var n=new Date(),h=n.getHours().toString().padStart(2,'0'),m=n.getMinutes().toString().padStart(2,'0');
-        var el=document.getElementById('clock');if(el)el.textContent=h+':'+m;
-      }
-      tick();setInterval(tick,1000);
+      // ── Search Data ──
+      var sIdx=[];
+      try{var rd=document.getElementById('searchData')?.textContent;if(rd)sIdx=JSON.parse(rd)}catch(e){}
 
       // ── Theme ──
       var themeBtn=document.getElementById('themeBtn');
       if(themeBtn){
-        themeBtn.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'🌙':'☀';
+        themeBtn.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'☀':'☾';
         themeBtn.addEventListener('click',function(){
           var h=document.documentElement,n=h.getAttribute('data-theme')==='dark'?'light':'dark';
           h.setAttribute('data-theme',n);localStorage.setItem('theme',n);
-          themeBtn.textContent=n==='dark'?'🌙':'☀';
+          themeBtn.textContent=n==='dark'?'☀':'☾';
         });
       }
 
+      // ── Mobile nav ──
+      var ham=document.getElementById('hamburger'),nav=document.getElementById('cosmicNav');
+      if(ham&&nav){ham.addEventListener('click',function(){nav.classList.toggle('open')})}
+
       // ── Search ──
-      var sIdx=[];
-      try{var rd=document.getElementById('searchData')?.textContent;if(rd)sIdx=JSON.parse(rd)}catch(e){}
-      var overlay=document.getElementById('searchOverlay');
-      var input=document.getElementById('searchInput');
-      var results=document.getElementById('searchResults');
-      function openSearch(){
-        overlay.classList.add('open');input.value='';input.focus();renderResults('');
-        document.body.style.overflow='hidden';
-      }
-      function closeSearch(){
-        overlay.classList.remove('open');document.body.style.overflow='';
-      }
+      var overlay=document.getElementById('searchOverlay'),input=document.getElementById('searchInput'),results=document.getElementById('searchResults');
+      function openSearch(){overlay.classList.add('open');input.value='';input.focus();renderResults('');document.body.style.overflow='hidden'}
+      function closeSearch(){overlay.classList.remove('open');document.body.style.overflow=''}
       function renderResults(q){
-        if(!q.trim()){results.innerHTML='<div class="search-empty">Start typing to find articles...</div>';return}
-        var m=sIdx.filter(function(p){
-          var t=p.title.toLowerCase(),d=p.description.toLowerCase(),qq=q.toLowerCase();
-          return t.indexOf(qq)!==-1||d.indexOf(qq)!==-1;
-        });
-        if(!m.length){results.innerHTML='<div class="search-empty">No scrolls found.</div>';return}
-        results.innerHTML=m.map(function(p){
-          return '<a href="/blog/'+p.id+'" class="search-item"><div class="search-item-title">'+p.title+'</div><div class="search-item-desc">'+p.description+'</div></a>';
-        }).join('');
+        if(!q.trim()){results.innerHTML='<div class="search-empty">Type to discover stars...</div>';return}
+        var m=sIdx.filter(function(p){var t=p.title.toLowerCase(),d=p.description.toLowerCase(),qq=q.toLowerCase();return t.indexOf(qq)!==-1||d.indexOf(qq)!==-1});
+        if(!m.length){results.innerHTML='<div class="search-empty">No celestial bodies found in this region.</div>';return}
+        results.innerHTML=m.map(function(p){return '<a href="/blog/'+p.id+'" class="search-result"><span class="search-result-date">'+new Date(p.date).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+'</span><div class="search-result-info"><div class="search-result-title">'+p.title+'</div><div class="search-result-desc">'+p.description+'</div></div></a>'}).join('')
       }
       document.getElementById('searchBtn').addEventListener('click',openSearch);
-      document.getElementById('searchClose').addEventListener('click',closeSearch);
       overlay.addEventListener('click',function(e){if(e.target===overlay)closeSearch()});
       input.addEventListener('input',function(){renderResults(input.value)});
       document.addEventListener('keydown',function(e){
-        if(e.key==='Escape')closeSearch();
+        if(e.key==='Escape'&&overlay.classList.contains('open'))closeSearch();
         if(e.key==='k'&&(e.ctrlKey||e.metaKey)){e.preventDefault();openSearch()}
         if(e.key==='/'&&document.activeElement===document.body){e.preventDefault();openSearch()}
       });

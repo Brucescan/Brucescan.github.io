@@ -2,21 +2,22 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Fatal Error" appName="System Error" appIcon="⚠">
-  <div class="bsod" onclick="window.location.href='/'">
-    <div class="bsod-head">ARCANE OS</div>
-    <div class="bsod-face">:(</div>
-    <div class="bsod-text">
-      A fatal exception 0x00000404 has occurred at 0028:C0001234 in VXD BLOG(01).<br><br>
-      The current page could not be found.<br>
-      The realm you seek does not exist in this dimension.<br><br>
-      * Press any key to return to the desktop.<br>
-      * Or just click anywhere. That works too.
-    </div>
-    <div class="bsod-prompt">Press any key to continue...</div>
+<BaseLayout title="Void — 404">
+  <div style="min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;z-index:2;padding:40px 20px">
+    <div style="font-size:6rem;margin-bottom:16px;animation:float 3s ease-in-out infinite">🕳</div>
+    <h1 style="font-family:var(--font-display);font-size:var(--text-2xl);color:var(--star-gold);letter-spacing:0.08em;margin-bottom:16px">
+      You've drifted into the Void
+    </h1>
+    <p style="font-family:var(--font-body);font-size:var(--text-base);color:var(--text-dim);max-width:400px;line-height:1.7;margin-bottom:32px">
+      This region of space contains nothing but darkness.
+      The star you're looking for doesn't exist — or perhaps it went supernova.
+    </p>
+    <a href="/" style="font-family:var(--font-display);font-size:var(--text-xs);color:var(--star-gold);letter-spacing:0.06em;padding:12px 28px;border:1px solid var(--star-gold);border-radius:6px;text-decoration:none;transition:all 0.3s">
+      ✦ Return to the Star Map
+    </a>
   </div>
-
-  <script>
-    document.addEventListener('keydown',function(){window.location.href='/'});
-  </script>
 </BaseLayout>
+
+<style>
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+</style>

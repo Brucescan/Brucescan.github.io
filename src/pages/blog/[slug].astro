@@ -5,19 +5,12 @@ import { site } from "../../data/site";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { id: post.id },
-  }));
+  return posts.map((post) => ({ params: { slug: post.id }, props: { id: post.id } }));
 }
 
 const { id } = Astro.props;
 const post = await getEntry("blog", id);
-
-if (!post) {
-  return Astro.redirect("/");
-}
-
+if (!post) return Astro.redirect("/");
 const { Content } = await render(post);
 
 const bodyText = post.body || "";
@@ -25,9 +18,8 @@ const chineseChars = (bodyText.match(/[一-鿿]/g) || []).length;
 const englishWords = (bodyText.match(/[a-zA-Z]+/g) || []).length;
 const readingMinutes = Math.max(1, Math.ceil(Math.max(chineseChars / 400, englishWords / 200)));
 
-const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
-  year: "numeric", month: "long", day: "numeric",
-});
+const formattedDate = post.data.date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 const allPosts = await getCollection("blog");
 const sortedAll = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
@@ -35,77 +27,88 @@ const currentIndex = sortedAll.findIndex((p) => p.id === id);
 const prevPost = currentIndex > 0 ? sortedAll[currentIndex - 1] : null;
 const nextPost = currentIndex < sortedAll.length - 1 ? sortedAll[currentIndex + 1] : null;
 
-const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
-
-// Get sibling articles for quick nav
-const siblings = sortedAll.filter(p => p.id !== id).slice(0, 5);
+// Related: same tags
+const related = allPosts
+  .filter(p => p.id !== id && p.data.tags.some(t => post.data.tags.includes(t)))
+  .slice(0, 3);
 ---
 
-<BaseLayout
-  title={post.data.title}
-  description={post.data.description}
-  appName={`Scroll: ${post.data.title}`}
-  appIcon="📜"
->
-  <div class="program">
-    <!-- Menu bar -->
-    <div class="program-titlebar">
-      <span class="program-title">📜 SCROLL READER — {post.data.title}</span>
-      <a href="/" class="program-menu" title="Back to Desktop">◀ Desktop</a>
-    </div>
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <article class="container" style="padding-top:40px;padding-bottom:40px">
 
-    <div class="program-body">
-      <!-- Article metadata bar -->
+    <!-- Back to star map -->
+    <a href="/" class="back-link">
+      ← Return to the star map
+    </a>
+
+    <!-- Header -->
+    <header style="margin:24px 0 32px">
+      <h1 class="article-content" style="margin:0 0 8px">{post.data.title}</h1>
       <div class="article-meta">
-        <span>📅 {formattedDate}</span>
-        <span>·</span>
-        <span>⏱ ~{readingMinutes} min</span>
+        <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+        <span class="reading-time">~{readingMinutes} min read</span>
         {post.data.tags.length > 0 && (
-          <>
-            <span>·</span>
-            {post.data.tags.map((tag) => (
-              <a href={`/tags/${tag.toLowerCase()}`}>#{tag}</a>
+          <div class="article-tags">
+            {post.data.tags.map(tag => (
+              <a href={`/tags/${tag.toLowerCase()}`} class="article-tag">{tag}</a>
             ))}
-          </>
+          </div>
         )}
       </div>
+    </header>
 
-      <!-- Article content -->
+    <!-- Content -->
+    <div class="article-content">
       <Content />
-
-      <!-- Prev / Next navigation -->
-      <nav class="article-nav">
-        {prevPost ? (
-          <a href={`/blog/${prevPost.id}`}>◀ Previous: {prevPost.data.title}</a>
-        ) : <span></span>}
-        {nextPost ? (
-          <a href={`/blog/${nextPost.id}`}>Next: {nextPost.data.title} ▶</a>
-        ) : <span></span>}
-      </nav>
-
-      <!-- More scrolls -->
-      {siblings.length > 0 && (
-        <div style="margin-top:20px;padding-top:12px;border-top:2px solid var(--shadow)">
-          <p style="font-family:var(--font-ui);font-size:0.7rem;color:var(--text-dim);margin-bottom:8px">MORE SCROLLS:</p>
-          <div style="display:flex;flex-wrap:wrap;gap:6px">
-            {siblings.map((s) => (
-              <a href={`/blog/${s.id}`} style="font-family:var(--font-ui);font-size:0.6rem;padding:4px 10px;background:var(--face);text-decoration:none;color:var(--text);box-shadow:inset 1px 1px 0 var(--highlight),inset -1px -1px 0 var(--shadow)">{s.data.title}</a>
-            ))}
-            <a href="/" style="font-family:var(--font-ui);font-size:0.6rem;padding:4px 10px;background:var(--face);text-decoration:none;color:var(--text);box-shadow:inset 1px 1px 0 var(--highlight),inset -1px -1px 0 var(--shadow)">← Desktop</a>
-          </div>
-        </div>
-      )}
     </div>
-  </div>
+
+    <!-- Post navigation -->
+    <nav class="article-nav">
+      {prevPost ? (
+        <a href={`/blog/${prevPost.id}`}>
+          <span class="article-nav-label">← Previous Star</span>
+          <span class="article-nav-title">{prevPost.data.title}</span>
+        </a>
+      ) : <div></div>}
+      {nextPost ? (
+        <a href={`/blog/${nextPost.id}`} style="text-align:right">
+          <span class="article-nav-label">Next Star →</span>
+          <span class="article-nav-title">{nextPost.data.title}</span>
+        </a>
+      ) : <div></div>}
+    </nav>
+
+    <!-- Related stars -->
+    {related.length > 0 && (
+      <div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border)">
+        <h3 style="font-family:var(--font-display);font-size:var(--text-sm);color:var(--star-gold);margin-bottom:16px;letter-spacing:0.06em">
+          ✦ Nearby Stars
+        </h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          {related.map(rp => (
+            <a href={`/blog/${rp.id}`} style="padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:6px;text-decoration:none;transition:all 0.3s;display:block">
+              <div style="font-family:var(--font-display);font-size:var(--text-xs);color:var(--star-gold);margin-bottom:4px">{rp.data.title}</div>
+              <div style="font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted)">{rp.data.date.toLocaleDateString("zh-CN",{year:"numeric",month:"short",day:"numeric"})}</div>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </article>
 
   <script type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": post.data.title,
-    "description": post.data.description,
-    "datePublished": post.data.date.toISOString(),
-    "author": { "@type": "Person", "name": site.author },
-    "url": pageUrl,
-  })}>
-  </script>
+    "@context":"https://schema.org","@type":"BlogPosting",
+    "headline":post.data.title,"description":post.data.description,
+    "datePublished":post.data.date.toISOString(),
+    "author":{"@type":"Person","name":site.author},"url":pageUrl,
+  })}></script>
 </BaseLayout>
+
+<style>
+  .back-link{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-muted);
+    text-decoration:none;transition:color 0.3s;
+  }
+  .back-link:hover{color:var(--star-gold);text-shadow:none}
+</style>

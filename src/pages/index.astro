@@ -4,81 +4,276 @@ import { getCollection } from "astro:content";
 
 const allPosts = await getCollection("blog");
 const sortedPosts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-const latestPost = sortedPosts[0];
 
-// Build tag list for tag browser page
-const tagMap = new Map<string, number>();
-for (const post of allPosts) {
-  for (const tag of post.data.tags) {
-    tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+// ── Spectral class per tag ──
+const spectralMap: Record<string, {color:string;glow:string;size:number}> = {
+  'c++':       {color:'#88bbff',glow:'rgba(136,187,255,0.5)',size:1.3},
+  'programming':{color:'#99ccff',glow:'rgba(153,204,255,0.4)',size:1.1},
+  'design':    {color:'#ffd700',glow:'rgba(255,215,0,0.5)',size:1.2},
+  'typography':{color:'#ffcc88',glow:'rgba(255,204,136,0.4)',size:0.95},
+  'philosophy':{color:'#cc88ff',glow:'rgba(204,136,255,0.5)',size:1.15},
+  'personal':  {color:'#ffaa66',glow:'rgba(255,170,102,0.5)',size:1.0},
+  'writing':   {color:'#ffccaa',glow:'rgba(255,204,170,0.4)',size:0.9},
+  'tutorial':  {color:'#66ddbb',glow:'rgba(102,221,187,0.5)',size:1.25},
+  'astro':     {color:'#ff8844',glow:'rgba(255,136,68,0.5)',size:1.1},
+  'web development':{color:'#66bbff',glow:'rgba(102,187,255,0.4)',size:1.05},
+  'notes':     {color:'#aaccee',glow:'rgba(170,204,238,0.4)',size:0.9},
+};
+
+function getSpectral(tags: string[]) {
+  for (const t of tags) {
+    const key = t.toLowerCase();
+    if (spectralMap[key]) return spectralMap[key];
   }
+  return {color:'#ffe8c0',glow:'rgba(255,232,192,0.4)',size:0.95};
 }
-const tags = Array.from(tagMap.entries())
-  .map(([name, count]) => ({ name, count }))
-  .sort((a, b) => a.name.localeCompare(b.name));
+
+// ── Fermat spiral positions ──
+const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~137.5°
+const scale = 62; // pixels between rings
+const stars = sortedPosts.map((post, i) => {
+  const spectral = getSpectral(post.data.tags);
+  const r = scale * Math.sqrt(i + 1);
+  const theta = (i + 1) * goldenAngle;
+  // Add slight randomness
+  const jitter = (Math.random() - 0.5) * 20;
+  const rj = r + jitter;
+  const tj = theta + (Math.random() - 0.5) * 0.3;
+  return {
+    id: post.id,
+    title: post.data.title,
+    desc: post.data.description,
+    date: post.data.date,
+    x: Math.cos(tj) * rj,
+    y: Math.sin(tj) * rj,
+    color: spectral.color,
+    glow: spectral.glow,
+    size: spectral.size,
+    tags: post.data.tags,
+  };
+});
+
+// Tag list
+const tagMap = new Map<string,number>();
+for (const post of allPosts) for (const t of post.data.tags) tagMap.set(t,(tagMap.get(t)||0)+1);
+const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).sort((a,b)=>b.count-a.count);
 ---
 
 <BaseLayout>
-  <div class="desktop">
-    <div class="desktop-icons">
-      <!-- Quest Log: opens blog list page -->
-      <a href="/blog/c_note" class="desk-icon" title="Browse all articles">
-        <div class="desk-icon-sprite">📖</div>
-        <div class="desk-icon-label">Quest Log</div>
-      </a>
+  <!-- ─── COSMIC CANVAS ─── -->
+  <div class="cosmos" id="cosmos">
+    <!-- Central sun / blog core -->
+    <div class="cosmos-core" aria-hidden="true">
+      <div class="core-glow"></div>
+      <div class="core-body">
+        <span class="core-symbol">✦</span>
+      </div>
+    </div>
 
-      <!-- Latest article -->
-      {latestPost && (
-        <a href={`/blog/${latestPost.id}`} class="desk-icon" title={latestPost.data.title}>
-          <div class="desk-icon-sprite">📜</div>
-          <div class="desk-icon-label">Latest Scroll</div>
-        </a>
-      )}
-
-      <!-- Each article as an icon -->
-      {sortedPosts.map((post) => (
-        <a href={`/blog/${post.id}`} class="desk-icon" title={post.data.title}>
-          <div class="desk-icon-sprite">📝</div>
-          <div class="desk-icon-label">{post.data.title.length > 18 ? post.data.title.substring(0, 18) + '…' : post.data.title}</div>
+    <!-- Star map -->
+    <div class="star-field" id="starField">
+      {stars.map((star, i) => (
+        <a
+          href={`/blog/${star.id}`}
+          class="celestial-body"
+          style={`--star-x:${star.x}px;--star-y:${star.y}px;--star-color:${star.color};--star-glow:${star.glow};--star-size:${star.size};animation-delay:${i*0.06}s`}
+          title={star.title}
+        >
+          <div class="star-core"></div>
+          <div class="star-halo"></div>
+          <div class="star-info">
+            <div class="star-title">{star.title}</div>
+            <div class="star-meta">
+              {star.date.toLocaleDateString("zh-CN",{month:"short",day:"numeric"})}
+              {star.tags.length > 0 && <> · {star.tags[0]}</>}
+            </div>
+          </div>
         </a>
       ))}
+    </div>
 
-      <!-- Tags / Spell Schools -->
-      {tags.length > 0 && (
-        <a href={`/tags/${tags[0].name.toLowerCase()}`} class="desk-icon" title="Browse by tag">
-          <div class="desk-icon-sprite">📁</div>
-          <div class="desk-icon-label">Spell Schools</div>
-        </a>
-      )}
+    <!-- Constellation lines (decorative, SVG overlay) -->
+    <svg class="constellations" id="constellations" viewBox="-400 -400 800 800" aria-hidden="true">
+      {stars.slice(0, -1).map((star, i) => {
+        // Connect nearby stars
+        const next = stars[i + 1];
+        const dx = next.x - star.x, dy = next.y - star.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 130) {
+          return <line x1={star.x} y1={star.y} x2={next.x} y2={next.y} stroke="rgba(255,208,102,0.08)" stroke-width="0.5" />;
+        }
+        return null;
+      })}
+    </svg>
+  </div>
 
-      <!-- GitHub -->
-      <a href="https://github.com/brucescan" class="desk-icon" target="_blank" rel="noopener" title="GitHub">
-        <div class="desk-icon-sprite">⚔</div>
-        <div class="desk-icon-label">GitHub</div>
-      </a>
-
-      <!-- RSS -->
-      <a href="/rss.xml" class="desk-icon" title="RSS Feed">
-        <div class="desk-icon-sprite">📡</div>
-        <div class="desk-icon-label">RSS Feed</div>
-      </a>
-
-      <!-- 404 easter egg -->
-      <a href="/404" class="desk-icon" title="The void">
-        <div class="desk-icon-sprite">🗑</div>
-        <div class="desk-icon-label">Recycle Bin</div>
-      </a>
+  <!-- ─── INFO PANEL ─── -->
+  <div class="info-panel container reveal">
+    <div class="info-card">
+      <h2 class="info-title">✦ Welcome, Traveler</h2>
+      <p class="info-text">
+        You have entered <strong>The Cosmic Codex</strong> — a living star map
+        where each article is a celestial body and every tag forms a constellation.
+        {sortedPosts.length} stars shine in this galaxy. Click any star to begin your journey.
+      </p>
+      <div class="info-tags">
+        <span class="info-tags-label">Navigate by constellation:</span>
+        {allTags.slice(0,8).map(tag => (
+          <a href={`/tags/${tag.name.toLowerCase()}`} class="info-tag-link">{tag.name} · {tag.count}</a>
+        ))}
+      </div>
     </div>
   </div>
 
-  <!-- SEO content (hidden for search engines) -->
+  <!-- SEO -->
   <div style="display:none" aria-hidden="true">
-    <h1>Flazi的桃花源 — Blog</h1>
-    <p>A retro fantasy operating system. Explore quests (articles), learn spells (tags), discover knowledge.</p>
-    <ul>
-      {sortedPosts.map((post) => (
-        <li><a href={`/blog/${post.id}`}>{post.data.title}</a> — {post.data.description}</li>
-      ))}
-    </ul>
+    <h1>Flazi的桃花源 — The Cosmic Codex</h1>
+    <p>{sortedPosts.length} articles about C++, design, programming and more.</p>
+    <ul>{sortedPosts.map(p=><li><a href={`/blog/${p.id}`}>{p.data.title}</a></li>)}</ul>
   </div>
 </BaseLayout>
+
+<style>
+  /* ── COSMOS CONTAINER ── */
+  .cosmos{
+    position:relative;width:100%;min-height:85vh;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;padding:60px 0;
+  }
+
+  /* ── CENTRAL SUN ── */
+  .cosmos-core{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    z-index:10;pointer-events:none;
+    width:80px;height:80px;display:flex;align-items:center;justify-content:center;
+  }
+  .core-glow{
+    position:absolute;inset:-60px;border-radius:50%;
+    background:radial-gradient(circle,var(--star-glow) 0%,rgba(255,208,102,0.1) 30%,transparent 70%);
+    animation:corePulse 3s ease-in-out infinite;
+  }
+  @keyframes corePulse{0%,100%{transform:scale(1);opacity:0.6}50%{transform:scale(1.3);opacity:1}}
+  .core-body{
+    width:20px;height:20px;border-radius:50%;background:var(--star-gold);
+    box-shadow:0 0 30px var(--star-glow),0 0 60px var(--star-glow),0 0 120px rgba(255,208,102,0.3);
+    display:flex;align-items:center;justify-content:center;
+    animation:coreBeat 2s ease-in-out infinite;
+  }
+  @keyframes coreBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+  .core-symbol{font-size:0.7rem;color:var(--void);animation:coreSpin 8s linear infinite}
+  @keyframes coreSpin{to{transform:rotate(360deg)}}
+
+  /* ── STAR FIELD ── */
+  .star-field{
+    position:relative;width:800px;height:800px;
+    max-width:90vw;max-height:90vw;aspect-ratio:1;
+  }
+
+  .celestial-body{
+    position:absolute;top:50%;left:50%;
+    transform:translate(calc(-50% + var(--star-x)), calc(-50% + var(--star-y)));
+    width:calc(28px * var(--star-size));height:calc(28px * var(--star-size));
+    display:flex;align-items:center;justify-content:center;
+    text-decoration:none;border-radius:50%;
+    cursor:pointer;z-index:5;
+    animation:starAppear 0.6s ease-out both;
+    transition:transform 0.3s ease,z-index 0s;
+  }
+  @keyframes starAppear{from{opacity:0;transform:translate(calc(-50% + var(--star-x)),calc(-50% + var(--star-y))) scale(0)}}
+
+  .star-core{
+    width:100%;height:100%;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,var(--star-color),rgba(0,0,0,0.8));
+    box-shadow:0 0 calc(10px * var(--star-size)) var(--star-glow),
+               0 0 calc(25px * var(--star-size)) var(--star-glow);
+    transition:all 0.4s ease;
+  }
+
+  .star-halo{
+    position:absolute;inset:-40%;border-radius:50%;
+    background:radial-gradient(circle,var(--star-glow) 0%,transparent 70%);
+    opacity:0;transition:opacity 0.4s ease;
+  }
+
+  .star-info{
+    position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);
+    text-align:center;white-space:nowrap;pointer-events:none;
+    opacity:0;transition:opacity 0.3s ease;
+  }
+  .star-title{
+    font-family:var(--font-display);font-size:0.6rem;color:var(--star-gold);
+    letter-spacing:0.06em;margin-bottom:2px;
+  }
+  .star-meta{font-family:var(--font-mono);font-size:0.5rem;color:var(--text-muted)}
+
+  /* ── HOVER EFFECTS ── */
+  .celestial-body:hover{z-index:50!important}
+  .celestial-body:hover .star-core{
+    box-shadow:0 0 calc(20px * var(--star-size)) var(--star-glow),
+               0 0 calc(50px * var(--star-size)) var(--star-glow),
+               0 0 calc(80px * var(--star-size)) rgba(255,208,102,0.3);
+    filter:brightness(1.5);
+  }
+  .celestial-body:hover .star-halo{opacity:1}
+  .celestial-body:hover .star-info{opacity:1}
+
+  /* ── CONSTELLATIONS SVG ── */
+  .constellations{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:900px;height:900px;max-width:95vw;max-height:95vw;
+    pointer-events:none;z-index:2;opacity:0.6;
+  }
+
+  /* ── INFO PANEL ── */
+  .info-panel{padding:60px 0 80px;position:relative;z-index:20}
+  .info-card{text-align:center;max-width:600px;margin:0 auto}
+  .info-title{font-family:var(--font-display);font-size:var(--text-xl);color:var(--star-gold);margin-bottom:16px;letter-spacing:0.06em}
+  .info-text{font-size:var(--text-base);line-height:1.7;color:var(--text-dim);margin-bottom:24px}
+  .info-tags{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
+  .info-tags-label{font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);width:100%;margin-bottom:4px}
+  .info-tag-link{
+    font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.04em;
+    color:var(--star-gold);padding:3px 12px;border:1px solid var(--border);border-radius:10px;
+    transition:all 0.3s;text-decoration:none;
+  }
+  .info-tag-link:hover{background:rgba(255,208,102,0.1);border-color:var(--star-gold);box-shadow:0 0 12px var(--star-glow);text-shadow:none}
+
+  /* Reveal animation */
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s,transform 0.6s}
+  .reveal.revealed{opacity:1;transform:translateY(0)}
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:768px){
+    .star-field{width:95vw;height:95vw}
+    .cosmos{padding:24px 0;min-height:60vh}
+    .star-info{display:none}
+    .celestial-body:hover .star-info{display:block}
+    .info-title{font-size:var(--text-lg)}
+  }
+</style>
+
+<script>
+  (function(){
+    // Scroll reveal
+    var observer=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');observer.unobserve(e.target)}})
+    },{threshold:0.15});
+    document.querySelectorAll('.reveal').forEach(function(el){observer.observe(el)});
+
+    // Parallax on mouse move
+    var cosmos=document.getElementById('cosmos'),core=cosmos?.querySelector('.cosmos-core');
+    if(cosmos&&core){
+      cosmos.addEventListener('mousemove',function(e){
+        var rect=cosmos.getBoundingClientRect();
+        var x=(e.clientX-rect.left)/rect.width-0.5;
+        var y=(e.clientY-rect.top)/rect.height-0.5;
+        core.style.transform='translate(calc(-50% + '+(x*30)+'px), calc(-50% + '+(y*30)+'px))';
+      });
+      cosmos.addEventListener('mouseleave',function(){
+        core.style.transform='translate(-50%,-50%)';
+        core.style.transition='transform 1s ease-out';
+        setTimeout(function(){core.style.transition=''},1000);
+      });
+    }
+  })();
+</script>
