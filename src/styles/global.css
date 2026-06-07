@@ -851,23 +851,6 @@ button:focus-visible,a:focus-visible,input:focus-visible{
 }
 
 /* ═══════════════════════════════════
-   STAR ORBIT RING (homepage hover)
-   ═══════════════════════════════════ */
-.celestial-body::after{
-  content:'';position:absolute;inset:-30%;
-  border-radius:50%;
-  border:1px solid transparent;
-  transition:all 0.4s ease;
-  pointer-events:none;
-}
-.celestial-body:hover::after{
-  inset:-45%;
-  border-color:rgba(255,216,117,0.18);
-  animation:orbitSpin 8s linear infinite;
-}
-@keyframes orbitSpin{to{transform:rotate(360deg)}}
-
-/* ═══════════════════════════════════
    BACK TO TOP SCROLL INDICATOR
    ═══════════════════════════════════ */
 .back-to-top[data-scroll-pct]::after{
