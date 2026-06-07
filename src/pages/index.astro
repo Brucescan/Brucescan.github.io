@@ -3,7 +3,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
 const allPosts = await getCollection("blog");
-const sortedPosts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const publishedPosts = allPosts.filter(p => !p.data.draft);
+const sortedPosts = publishedPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Maturity helper
+function maturity(d: Date): string {
+  const days = (Date.now() - d.getTime()) / 86400000;
+  if (days < 30) return 'nova';
+  if (days < 365) return 'main-sequence';
+  return 'red-giant';
+}
 
 // ── Spectral class per tag ──
 const spectralMap: Record<string, {color:string;glow:string;size:number}> = {
@@ -33,12 +42,11 @@ function hashStr(s:string):number{let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-
 
 // ── Fermat spiral ──
 const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-const scale = 50; // tighter spiral for 4 articles
+const scale = 50;
 const stars = sortedPosts.map((post, i) => {
   const spectral = getSpectral(post.data.tags);
   const r = scale * Math.sqrt(i + 1);
   const theta = (i + 1) * goldenAngle;
-  // Deterministic jitter from article ID
   const h = hashStr(post.id);
   const jitterR = (((h % 100) / 100) - 0.5) * 16;
   const jitterT = (((hashStr(post.id+'t') % 100) / 100) - 0.5) * 0.25;
@@ -48,14 +56,38 @@ const stars = sortedPosts.map((post, i) => {
     x: Math.round(Math.cos(theta + jitterT) * (r + jitterR)),
     y: Math.round(Math.sin(theta + jitterT) * (r + jitterR)),
     color: spectral.color, glow: spectral.glow, size: spectral.size,
-    tags: post.data.tags,
+    tags: post.data.tags, maturity: maturity(post.data.date),
   };
 });
 
 // Tag list
 const tagMap = new Map<string,number>();
-for (const post of allPosts) for (const t of post.data.tags) tagMap.set(t,(tagMap.get(t)||0)+1);
+for (const post of publishedPosts) for (const t of post.data.tags) tagMap.set(t,(tagMap.get(t)||0)+1);
 const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).sort((a,b)=>b.count-a.count);
+
+// Tag -> post IDs mapping for hover highlight
+const tagToPosts = new Map<string,string[]>();
+for (const post of publishedPosts) for (const t of post.data.tags) {
+  const key = t.toLowerCase();
+  if (!tagToPosts.has(key)) tagToPosts.set(key, []);
+  tagToPosts.get(key)!.push(post.id);
+}
+// Post ID -> its tags
+const postTags: Record<string,string[]> = {};
+for (const post of publishedPosts) postTags[post.id] = post.data.tags.map(t=>t.toLowerCase());
+
+// Deep space objects (decorative drifting dots in empty areas)
+const deepSpaceCount = Math.max(8, 20 - sortedPosts.length * 2);
+const deepSpaceObjects = Array.from({length: deepSpaceCount}, (_, i) => {
+  const h = hashStr('deep'+i);
+  return {
+    x: ((h % 1000) / 1000 * 400) - 200,
+    y: ((hashStr('deepy'+i) % 1000) / 1000 * 400) - 200,
+    size: 1.5 + (h % 10) / 10 * 2,
+    delay: (i * 0.7) % 6,
+    opacity: 0.15 + (h % 30) / 100,
+  };
+});
 ---
 
 <BaseLayout>
@@ -71,10 +103,20 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
 
     <!-- Star map -->
     <div class="star-field" id="starField">
+      {/* Deep space objects */}
+      {deepSpaceObjects.map((obj, i) => (
+        <div
+          class="deep-space-object"
+          style={`position:absolute;top:50%;left:50%;transform:translate(calc(-50% + ${obj.x}px),calc(-50% + ${obj.y}px));width:${obj.size}px;height:${obj.size}px;background:rgba(255,208,102,${obj.opacity});box-shadow:0 0 ${obj.size*2}px rgba(255,208,102,${obj.opacity});animation-delay:${obj.delay}s;border-radius:50%`}
+          aria-hidden="true"
+        ></div>
+      ))}
+
       {stars.map((star, i) => (
         <a
           href={`/blog/${star.id}`}
           class="celestial-body"
+          data-tags={star.tags.map(t=>t.toLowerCase()).join(',')}
           style={`--star-x:${star.x}px;--star-y:${star.y}px;--star-color:${star.color};--star-glow:${star.glow};--star-size:${star.size};animation-delay:${i*0.06}s`}
           title={star.title}
         >
@@ -85,6 +127,7 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
             <div class="star-meta">
               {star.date.toLocaleDateString("zh-CN",{month:"short",day:"numeric"})}
               {star.tags.length > 0 && <> · {star.tags[0]}</>}
+              <span class={`maturity-badge ${star.maturity}`}></span>
             </div>
           </div>
         </a>
@@ -113,7 +156,7 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
       <p class="info-text">
         You have entered <strong>The Cosmic Codex</strong> — a living star map
         where each article is a celestial body and every tag forms a constellation.
-        {sortedPosts.length} stars shine in this galaxy. Click any star to begin your journey.
+        {sortedPosts.length} stars shine in this galaxy{allPosts.length > sortedPosts.length && <>, {allPosts.length - sortedPosts.length} still forming in the nebula</>}. Click any star to begin your journey.
       </p>
       <div class="info-tags">
         <span class="info-tags-label">Navigate by constellation:</span>
@@ -130,6 +173,9 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
     <p>{sortedPosts.length} articles about C++, design, programming and more.</p>
     <ul>{sortedPosts.map(p=><li><a href={`/blog/${p.id}`}>{p.data.title}</a></li>)}</ul>
   </div>
+
+  <script type="application/json" id="tagPostMap" set:html={JSON.stringify(Object.fromEntries(tagToPosts))}></script>
+  <script type="application/json" id="postTagsMap" set:html={JSON.stringify(postTags)}></script>
 </BaseLayout>
 
 <style>
@@ -216,6 +262,13 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
   .celestial-body:hover .star-halo{opacity:1}
   .celestial-body:hover .star-info{opacity:1}
 
+  /* Tag-match highlight (hover) */
+  .celestial-body.star-dim{opacity:0.25;transition:opacity 0.4s}
+  .celestial-body.star-match{opacity:1;z-index:20}
+  .celestial-body.star-match .star-core{box-shadow:0 0 calc(25px * var(--star-size)) var(--star-glow),
+               0 0 calc(60px * var(--star-size)) var(--star-glow),
+               0 0 calc(90px * var(--star-size)) rgba(255,208,102,0.35)}
+
   /* ── CONSTELLATIONS SVG ── */
   .constellations{
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -259,7 +312,7 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
     },{threshold:0.15});
     document.querySelectorAll('.reveal').forEach(function(el){observer.observe(el)});
 
-    // Parallax on mouse move
+    // ── Parallax on mouse move ──
     var cosmos=document.getElementById('cosmos'),core=cosmos?.querySelector('.cosmos-core');
     if(cosmos&&core){
       cosmos.addEventListener('mousemove',function(e){
@@ -274,5 +327,33 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
         setTimeout(function(){core.style.transition=''},1000);
       });
     }
+
+    // ── Hover highlight: same-tag stars glow together ──
+    var tagPostMap={},postTagsMap={};
+    try{tagPostMap=JSON.parse(document.getElementById('tagPostMap')?.textContent||'{}')}catch(e){}
+    try{postTagsMap=JSON.parse(document.getElementById('postTagsMap')?.textContent||'{}')}catch(e){}
+
+    starField.querySelectorAll('.celestial-body').forEach(function(star){
+      star.addEventListener('mouseenter',function(){
+        var href=star.getAttribute('href')?.replace('/blog/','')||'';
+        var tags=postTagsMap[href]||[];
+        // Collect ALL post IDs that share any tag with this star
+        var relatedIds=new Set();
+        tags.forEach(function(t){(tagPostMap[t]||[]).forEach(function(id){relatedIds.add(id)})});
+        // If this star has no tags or is unique, only highlight itself
+        if(relatedIds.size<=1){
+          relatedIds=new Set([href]);
+        }
+        starField.querySelectorAll('.celestial-body').forEach(function(s){
+          var sid=s.getAttribute('href')?.replace('/blog/','')||'';
+          if(relatedIds.has(sid))s.classList.add('star-match');else s.classList.add('star-dim');
+        });
+      });
+      star.addEventListener('mouseleave',function(){
+        starField.querySelectorAll('.celestial-body').forEach(function(s){
+          s.classList.remove('star-match','star-dim');
+        });
+      });
+    });
   })();
 </script>

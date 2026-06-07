@@ -1,0 +1,77 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const allPosts = await getCollection("blog");
+const published = allPosts.filter(p => !p.data.draft);
+const sorted = published.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Group by year
+const byYear = new Map<number, typeof sorted>();
+for (const p of sorted) {
+  const y = p.data.date.getFullYear();
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(p);
+}
+
+// Tag colors for timeline dots
+const spectralMap: Record<string, string> = {
+  'c++': '#88bbff', 'programming': '#99ccff', 'design': '#ffd700',
+  'typography': '#ffcc88', 'philosophy': '#cc88ff', 'personal': '#ffaa66',
+  'writing': '#ffccaa', 'tutorial': '#66ddbb', 'astro': '#ff8844',
+  'web development': '#66bbff', 'notes': '#aaccee',
+};
+function getColor(tags: string[]) {
+  for (const t of tags) { const k = t.toLowerCase(); if (spectralMap[k]) return spectralMap[k]; }
+  return '#ffd066';
+}
+---
+
+<BaseLayout title="Timeline — Light-Year Trail" description="A chronological journey through all articles">
+  <div class="container" style="padding-top:40px;padding-bottom:40px">
+    <a href="/" class="back-link">← Star map</a>
+
+    <header style="margin:24px 0 32px;text-align:center">
+      <h1 style="font-family:var(--font-display);font-size:var(--text-2xl);color:var(--star-gold);letter-spacing:0.06em;margin-bottom:8px">
+        🌠 Light-Year Trail
+      </h1>
+      <p style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-dim)">
+        {sorted.length} transmissions across {byYear.size} cosmic year{byYear.size!==1?'s':''}
+      </p>
+    </header>
+
+    <div class="timeline">
+      <div class="timeline-path" aria-hidden="true"></div>
+      {Array.from(byYear.entries()).map(([year, posts]) => (
+        <div>
+          {/* Year marker */}
+          <div style="text-align:center;margin:32px 0 16px;position:relative;z-index:2">
+            <span style="font-family:var(--font-display);font-size:var(--text-lg);color:var(--star-gold);letter-spacing:0.08em;padding:4px 20px;background:var(--void);border:1px solid var(--border);border-radius:20px">
+              {year}
+            </span>
+          </div>
+          {posts.map((p, idx) => (
+            <div class="timeline-item">
+              <div class="timeline-dot" style={`background:${getColor(p.data.tags)}`} aria-hidden="true"></div>
+              <a href={`/blog/${p.id}`} class="timeline-card">
+                <div class="timeline-card-date">
+                  {p.data.date.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric"})}
+                </div>
+                <div class="timeline-card-title">{p.data.title}</div>
+                <div class="timeline-card-desc">{p.data.description}</div>
+                <div class="timeline-card-tags">
+                  {p.data.tags.map(t => <span class="timeline-card-tag">{t}</span>)}
+                </div>
+              </a>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-muted);text-decoration:none;transition:color 0.3s}
+  .back-link:hover{color:var(--star-gold);text-shadow:none}
+</style>

@@ -16,15 +16,27 @@ const pageUrl = new URL(Astro.url.pathname, site.url).href;
 const ogImg = ogImage ? new URL(ogImage, site.url).href : new URL("/images/og.jpg", site.url).href;
 
 const allPosts2 = await getCollection("blog");
+const published = allPosts2.filter(p => !p.data.draft);
 const tagSet = new Set<string>();
-for (const p of allPosts2) for (const t of p.data.tags) tagSet.add(t);
+for (const p of published) for (const t of p.data.tags) tagSet.add(t);
 const firstTag = Array.from(tagSet).sort()[0]?.toLowerCase() ?? '';
-const searchData = allPosts2.map(p => ({
+const searchData = published.map(p => ({
   id: p.id, title: p.data.title, description: p.data.description,
   date: p.data.date.toISOString(),
+  content: (p.body || '').replace(/[#*`\[\]()>!\-|~]/g,' ').replace(/\s+/g,' ').trim().slice(0, 400),
+  tags: p.data.tags,
 }));
 
+// Maturity: nova (<30d), main-sequence (30d-1y), red-giant (>1y)
+function maturity(d: Date): string {
+  const days = (Date.now() - d.getTime()) / 86400000;
+  if (days < 30) return 'nova';
+  if (days < 365) return 'main-sequence';
+  return 'red-giant';
+}
+
 const currentPath = Astro.url.pathname;
+const isArticle = currentPath.startsWith('/blog/');
 function isActive(href:string){if(href==='/')return currentPath==='/';return currentPath.startsWith(href)}
 ---
 
@@ -48,8 +60,6 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
 <body>
   <!-- Cosmic Background -->
   <div class="cosmic-bg" aria-hidden="true"></div>
-  <!-- Meteor canvas -->
-  <canvas id="meteorCanvas" aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:1"></canvas>
 
   <!-- Header -->
   <header class="cosmic-header">
@@ -61,13 +71,17 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
       <nav class="cosmic-nav" id="cosmicNav">
         <a href="/" class:list={[{active:isActive('/')}]}>Home</a>
+        <a href="/timeline" class:list={[{active:isActive('/timeline')}]}>Timeline</a>
         <a href={`/blog/${searchData[0]?.id ?? ''}`} class:list={[{active:isActive('/blog')}]}>Read</a>
         <a href={`/tags/${firstTag}`} class:list={[{active:isActive('/tags')}]}>Tags</a>
+        <a href="/nebula" class:list={[{active:isActive('/nebula')}]}>Nebula</a>
         <a href="https://github.com/brucescan" target="_blank" rel="noopener">About</a>
       </nav>
       <div class="cosmic-tools">
         <button class="cosmic-tool-btn" id="searchBtn" title="Search (Ctrl+K)" aria-label="Search">🔭</button>
         <button class="cosmic-tool-btn" id="themeBtn" title="Toggle theme" aria-label="Theme">☀</button>
+        {isArticle && <button class="cosmic-tool-btn" id="ttsBtn" title="Read aloud" aria-label="TTS">🔊</button>}
+        {isArticle && <button class="cosmic-tool-btn" id="immersiveBtn" title="Immersive mode" aria-label="Immersive">🕯</button>}
       </div>
     </div>
   </header>
@@ -118,71 +132,23 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
     </div>
   </div>
 
+  <!-- Lightbox overlay -->
+  <div class="lightbox-overlay" id="lightboxOverlay">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+    <button class="lightbox-prev" id="lightboxPrev" aria-label="Previous">‹</button>
+    <button class="lightbox-next" id="lightboxNext" aria-label="Next">›</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <div class="lightbox-counter" id="lightboxCounter"></div>
+  </div>
+
+  <!-- Immersive exit -->
+  <button class="immersive-exit" id="immersiveExit" title="Exit immersive mode">✕ Exit Immersion</button>
+
   <script type="application/json" id="searchData" set:html={JSON.stringify(searchData)}></script>
 
   <script>
     (function(){
-      // ── Meteor Shower ──
-      (function(){
-        var c=document.getElementById('meteorCanvas');if(!c)return;
-        var ctx=c.getContext('2d');if(!ctx)return;
-        function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
-        resize();window.addEventListener('resize',resize);
-
-        var meteors=[];
-        var timer=0;
-
-        function spawn(){
-          var angle=-30+Math.random()*20; // -30 to -10 degrees (top-right to bottom-left)
-          var rad=angle*Math.PI/180;
-          var len=80+Math.random()*140;
-          // Start from right side of screen, upper portion
-          var x=c.width*(0.3+Math.random()*0.7);
-          var y=c.height*(0.05+Math.random()*0.3);
-          meteors.push({
-            x:x,y:y,len:len,angle:angle,
-            life:1, // 1 -> 0
-            speed:0.015+Math.random()*0.03
-          });
-        }
-
-        function draw(){
-          ctx.clearRect(0,0,c.width,c.height);
-          timer++;
-          if(timer>80+Math.random()*200){timer=0;spawn()}
-
-          for(var i=meteors.length-1;i>=0;i--){
-            var m=meteors[i];
-            m.life-=m.speed;
-            if(m.life<=0){meteors.splice(i,1);continue}
-
-            var rad=m.angle*Math.PI/180;
-            var ex=m.x+Math.cos(rad)*m.len;
-            var ey=m.y+Math.sin(rad)*m.len;
-
-            // Fade in then out: peak at life=0.6
-            var alpha=m.life<0.3?m.life/0.3:(m.life>0.7?(1-m.life)/0.3:1);
-            alpha*=0.9;
-
-            // Trail gradient: bright at head, fading to tail
-            var grad=ctx.createLinearGradient(m.x,m.y,ex,ey);
-            grad.addColorStop(0,'rgba(255,255,255,0)');
-            grad.addColorStop(0.85,'rgba(255,240,220,'+(alpha*0.4)+')');
-            grad.addColorStop(1,'rgba(255,255,255,'+alpha+')');
-
-            ctx.strokeStyle=grad;ctx.lineWidth=2;ctx.lineCap='round';
-            ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(ex,ey);ctx.stroke();
-
-            // Head glow
-            ctx.fillStyle='rgba(255,255,255,'+(alpha*0.9)+')';
-            ctx.beginPath();ctx.arc(ex,ey,1.2,0,Math.PI*2);ctx.fill();
-          }
-          requestAnimationFrame(draw);
-        }
-        spawn();draw();
-      })();
-
-      // ── Search Data ──
+      // ── Data ──
       var sIdx=[];
       try{var rd=document.getElementById('searchData')?.textContent;if(rd)sIdx=JSON.parse(rd)}catch(e){}
 
@@ -212,6 +178,74 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       // ── Code copy buttons ──
       document.querySelectorAll('pre').forEach(function(pre){var wrap=document.createElement('div');wrap.className='code-block-wrap';pre.parentNode.insertBefore(wrap,pre);wrap.appendChild(pre);var btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';wrap.appendChild(btn);btn.addEventListener('click',function(){var code=pre.querySelector('code')?.textContent||pre.textContent||'';navigator.clipboard.writeText(code).then(function(){btn.textContent='Copied!';btn.classList.add('copied');setTimeout(function(){btn.textContent='Copy';btn.classList.remove('copied')},2000)})})});
 
+      // ── Random warp ──
+      var randomBtn=document.getElementById('randomBtn');
+      if(randomBtn&&randomIds.length){
+        randomBtn.addEventListener('click',function(){
+          var id=randomIds[Math.floor(Math.random()*randomIds.length)];
+          if(id)window.location.href='/blog/'+id;
+        });
+      }
+
+      // ── Immersive mode ──
+      var immersiveBtn=document.getElementById('immersiveBtn'),immersiveExit=document.getElementById('immersiveExit');
+      function enterImmersive(){document.body.classList.add('immersive');immersiveExit.classList.add('visible')}
+      function exitImmersive(){document.body.classList.remove('immersive');immersiveExit.classList.remove('visible')}
+      if(immersiveBtn)immersiveBtn.addEventListener('click',enterImmersive);
+      if(immersiveExit)immersiveExit.addEventListener('click',exitImmersive);
+
+      // ── TTS (Text-to-Speech) ──
+      var ttsBtn=document.getElementById('ttsBtn'),ttsSpeaking=false,ttsUtterance=null;
+      if(ttsBtn&&window.speechSynthesis){
+        ttsBtn.addEventListener('click',function(){
+          if(ttsSpeaking){window.speechSynthesis.cancel();ttsSpeaking=false;ttsBtn.textContent='🔊';return}
+          var article=document.querySelector('.article-content');
+          if(!article)return;
+          // Collect text from article, skipping code blocks
+          var parts=[];article.querySelectorAll('p,h1,h2,h3,h4,li,blockquote').forEach(function(el){
+            if(el.closest('pre'))return;
+            var t=el.textContent?.trim();
+            if(t)parts.push(t);
+          });
+          var text=parts.join('. ');
+          if(!text)return;
+          ttsUtterance=new SpeechSynthesisUtterance(text);
+          ttsUtterance.lang='zh-CN';
+          ttsUtterance.rate=0.9;
+          ttsUtterance.onend=function(){ttsSpeaking=false;ttsBtn.textContent='🔊'};
+          ttsUtterance.onerror=function(){ttsSpeaking=false;ttsBtn.textContent='🔊'};
+          ttsSpeaking=true;ttsBtn.textContent='⏹';
+          window.speechSynthesis.speak(ttsUtterance);
+        });
+      }
+
+      // ── Image lightbox ──
+      var lbOverlay=document.getElementById('lightboxOverlay'),lbImg=document.getElementById('lightboxImg'),
+          lbClose=document.getElementById('lightboxClose'),lbPrev=document.getElementById('lightboxPrev'),
+          lbNext=document.getElementById('lightboxNext'),lbCounter=document.getElementById('lightboxCounter');
+      var lbImages=[],lbIdx=0;
+      function openLightbox(idx){
+        lbIdx=idx;lbImg.src=lbImages[idx].src;lbImg.alt=lbImages[idx].alt||'';
+        lbCounter.textContent=(idx+1)+' / '+lbImages.length;
+        lbOverlay.classList.add('open');document.body.style.overflow='hidden';
+      }
+      function closeLightbox(){lbOverlay.classList.remove('open');document.body.style.overflow=''}
+      function lbPrevFn(){if(lbImages.length>1){lbIdx=(lbIdx-1+lbImages.length)%lbImages.length;openLightbox(lbIdx)}}
+      function lbNextFn(){if(lbImages.length>1){lbIdx=(lbIdx+1)%lbImages.length;openLightbox(lbIdx)}}
+      if(lbOverlay){
+        lbClose.addEventListener('click',closeLightbox);
+        lbPrev.addEventListener('click',lbPrevFn);
+        lbNext.addEventListener('click',lbNextFn);
+        lbOverlay.addEventListener('click',function(e){if(e.target===lbOverlay||e.target===lbImg)closeLightbox()});
+        // Collect article images
+        var articleImgs=document.querySelectorAll('.article-content img');
+        articleImgs.forEach(function(img,idx){
+          lbImages.push(img);
+          img.style.cursor='zoom-in';
+          img.addEventListener('click',function(e){e.preventDefault();openLightbox(idx)});
+        });
+      }
+
       // ── Keyboard shortcuts panel ──
       var kbdPanel=document.getElementById('kbdPanel'),kbdClose=document.getElementById('kbdClose');
       function openKbd(){kbdPanel.classList.add('open');document.body.style.overflow='hidden'}
@@ -221,30 +255,49 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       // ── Global keyboard shortcuts ──
       document.addEventListener('keydown',function(e){
         var tag=e.target.tagName;
-        if(tag==='INPUT'||tag==='TEXTAREA')return;
-        if(e.key==='Escape'){closeSearch();closeKbd()}
+        if(tag==='INPUT'||tag==='TEXTAREA'){
+          if(e.key==='Escape'){e.target.blur();closeSearch();closeLightbox()}
+          return;
+        }
+        if(e.key==='Escape'){closeSearch();closeKbd();closeLightbox();exitImmersive()}
         if(e.key==='k'&&(e.ctrlKey||e.metaKey)){e.preventDefault();openSearch()}
         if(e.key==='/'&&document.activeElement===document.body){e.preventDefault();openSearch()}
         if(e.key==='t'&&(e.ctrlKey||e.metaKey)){e.preventDefault();document.getElementById('themeBtn')?.click()}
         if(e.key==='h'&&(e.ctrlKey||e.metaKey)){e.preventDefault();window.location.href='/'}
         if(e.key==='?'){e.preventDefault();openKbd()}
+        if(e.key==='ArrowLeft'&&lbOverlay.classList.contains('open')){e.preventDefault();lbPrevFn()}
+        if(e.key==='ArrowRight'&&lbOverlay.classList.contains('open')){e.preventDefault();lbNextFn()}
       });
+
+      // ── Search ──
+      var overlay=document.getElementById('searchOverlay'),input=document.getElementById('searchInput'),results=document.getElementById('searchResults');
       function openSearch(){overlay.classList.add('open');input.value='';input.focus();renderResults('');document.body.style.overflow='hidden'}
       function closeSearch(){overlay.classList.remove('open');document.body.style.overflow=''}
+      function highlightText(text,q){
+        if(!q.trim())return text;
+        var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+        return text.replace(re,'<mark class="search-highlight">$1</mark>');
+      }
       function renderResults(q){
         if(!q.trim()){results.innerHTML='<div class="search-empty">Type to discover stars...</div>';return}
-        var m=sIdx.filter(function(p){var t=p.title.toLowerCase(),d=p.description.toLowerCase(),qq=q.toLowerCase();return t.indexOf(qq)!==-1||d.indexOf(qq)!==-1});
+        var qq=q.toLowerCase();
+        var m=sIdx.filter(function(p){
+          return p.title.toLowerCase().indexOf(qq)!==-1||p.description.toLowerCase().indexOf(qq)!==-1||(p.content||'').toLowerCase().indexOf(qq)!==-1||(p.tags||[]).some(function(t){return t.toLowerCase().indexOf(qq)!==-1});
+        });
         if(!m.length){results.innerHTML='<div class="search-empty">No celestial bodies found in this region.</div>';return}
-        results.innerHTML=m.map(function(p){return '<a href="/blog/'+p.id+'" class="search-result"><span class="search-result-date">'+new Date(p.date).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+'</span><div class="search-result-info"><div class="search-result-title">'+p.title+'</div><div class="search-result-desc">'+p.description+'</div></div></a>'}).join('')
+        results.innerHTML=m.map(function(p){
+          var snippet='';
+          var body=p.content||'';
+          var idx=body.toLowerCase().indexOf(qq);
+          if(idx>=0){var s=Math.max(0,idx-40),e=Math.min(body.length,idx+qq.length+40);snippet=body.slice(s,e);if(s>0)snippet='…'+snippet;if(e<body.length)snippet+='…'}
+          return '<a href="/blog/'+p.id+'" class="search-result"><span class="search-result-date">'+new Date(p.date).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+'</span><div class="search-result-info"><div class="search-result-title">'+highlightText(p.title,q)+'</div><div class="search-result-desc">'+highlightText(p.description,q)+'</div>'+(snippet?'<div class="search-result-snippet">'+highlightText(snippet,q)+'</div>':'')+'</div><div class="search-result-tags">'+(p.tags||[]).slice(0,2).map(function(t){return '<span class="search-result-tag">'+t+'</span>'}).join('')+'</div></a>'
+        }).join('');
+        // Save recent search
+        try{var recent=JSON.parse(localStorage.getItem('cosmicRecent')||'[]');recent=recent.filter(function(r){return r!==q});recent.unshift(q);recent=recent.slice(0,5);localStorage.setItem('cosmicRecent',JSON.stringify(recent))}catch(e){}
       }
       document.getElementById('searchBtn').addEventListener('click',openSearch);
       overlay.addEventListener('click',function(e){if(e.target===overlay)closeSearch()});
       input.addEventListener('input',function(){renderResults(input.value)});
-      document.addEventListener('keydown',function(e){
-        if(e.key==='Escape'&&overlay.classList.contains('open'))closeSearch();
-        if(e.key==='k'&&(e.ctrlKey||e.metaKey)){e.preventDefault();openSearch()}
-        if(e.key==='/'&&document.activeElement===document.body){e.preventDefault();openSearch()}
-      });
     })();
   </script>
 </body>

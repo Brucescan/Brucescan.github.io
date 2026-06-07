@@ -11,6 +11,9 @@ export async function getStaticPaths() {
 const { id } = Astro.props;
 const post = await getEntry("blog", id);
 if (!post) return Astro.redirect("/");
+// Redirect drafts in production (dev shows them)
+const isDev = Astro.url.hostname === 'localhost';
+if (post.data.draft && !isDev) return Astro.redirect("/");
 const { Content } = await render(post);
 
 const bodyText = post.body || "";
@@ -21,14 +24,34 @@ const readingMinutes = Math.max(1, Math.ceil(Math.max(chineseChars / 400, englis
 const formattedDate = post.data.date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
 const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
 
+// Maturity
+function maturity(d: Date): string {
+  const days = (Date.now() - d.getTime()) / 86400000;
+  if (days < 30) return 'nova';
+  if (days < 365) return 'main-sequence';
+  return 'red-giant';
+}
+const postMaturity = maturity(post.data.date);
+
+// Extract h2 headings for chapter cards
+const h2Matches = bodyText.match(/^##\s+(.+)$/gm);
+const chapters = h2Matches ? h2Matches.map(h => h.replace(/^##\s+/, '')) : [];
+
 const allPosts = await getCollection("blog");
-const sortedAll = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const publishedPosts = allPosts.filter(p => !p.data.draft || isDev);
+const sortedAll = publishedPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const currentIndex = sortedAll.findIndex((p) => p.id === id);
 const prevPost = currentIndex > 0 ? sortedAll[currentIndex - 1] : null;
 const nextPost = currentIndex < sortedAll.length - 1 ? sortedAll[currentIndex + 1] : null;
 
+// Series navigation
+const seriesName = post.data.series;
+const seriesPosts = seriesName
+  ? publishedPosts.filter(p => p.data.series === seriesName).sort((a,b) => (a.data.seriesOrder??99) - (b.data.seriesOrder??99))
+  : [];
+
 // Related: same tags
-const related = allPosts
+const related = publishedPosts
   .filter(p => p.id !== id && p.data.tags.some(t => post.data.tags.includes(t)))
   .slice(0, 3);
 ---
@@ -47,6 +70,8 @@ const related = allPosts
       <div class="article-meta">
         <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
         <span class="reading-time">~{readingMinutes} min read</span>
+        <span class={`maturity-badge ${postMaturity}`}></span>
+        {post.data.draft && <span class="maturity-badge" style="color:#ff6666;border-color:rgba(255,102,102,0.4);background:rgba(255,102,102,0.06)">📝 Draft</span>}
         {post.data.tags.length > 0 && (
           <div class="article-tags">
             {post.data.tags.map(tag => (
@@ -56,6 +81,33 @@ const related = allPosts
         )}
       </div>
     </header>
+
+    {/* Chapter cards for long articles */}
+    {chapters.length >= 3 && (
+      <nav class="chapter-grid" aria-label="Article chapters">
+        {chapters.map((ch, i) => (
+          <a href={`#h-${i}`} class="chapter-card">
+            <div class="chapter-card-num">Part {String(i+1).padStart(2,'0')}</div>
+            <div class="chapter-card-title">{ch}</div>
+          </a>
+        ))}
+      </nav>
+    )}
+
+    {/* Series navigation */}
+    {seriesPosts.length > 1 && (
+      <nav class="series-nav">
+        <div class="series-nav-title">🌌 Galaxy: {seriesName}</div>
+        <div class="series-nav-list">
+          {seriesPosts.map(sp => (
+            <a href={`/blog/${sp.id}`} class={`series-nav-item${sp.id===id?' current':''}`}>
+              <span class="series-nav-label">Part {sp.data.seriesOrder ?? '·'}</span>
+              <span class="series-nav-name">{sp.data.title}</span>
+            </a>
+          ))}
+        </div>
+      </nav>
+    )}
 
     <!-- Content with TOC sidebar -->
     <div class="post-with-toc">
@@ -121,6 +173,21 @@ const related = allPosts
       // Highlight on scroll
       var observer=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){items.forEach(function(it){it.el.classList.remove('active')});var found=items.find(function(it){return it.id===e.target.id});if(found)found.el.classList.add('active')}})},{rootMargin:'-80px 0px -70% 0px',threshold:0});
       headings.forEach(function(h){observer.observe(h)});
+
+      // ── Collapse inline TOC (long article table of contents in markdown) ──
+      var firstUl=content.querySelector('ul');
+      if(firstUl){
+        var links=firstUl.querySelectorAll('a[href^="#"]');
+        if(links.length>=6){
+          var details=document.createElement('details');
+          details.className='inline-toc-collapse';
+          var summary=document.createElement('summary');
+          summary.textContent='📜 目录 ('+links.length+' 章节) — 点击展开';
+          details.appendChild(summary);
+          firstUl.parentNode.insertBefore(details,firstUl);
+          details.appendChild(firstUl);
+        }
+      }
     })();
   </script>
 

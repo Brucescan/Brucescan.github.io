@@ -10,7 +10,11 @@ export const site = {
   },
   nav: [
     { label: "Home", href: "/" },
-    { label: "Blog", href: "/#posts" },
-    { label: "About", href: "/#about" },
+    { label: "Timeline", href: "/timeline" },
+    { label: "Nebula", href: "/nebula" },
+  ],
+  friends: [
+    { name: "Astro", url: "https://astro.build", desc: "The web framework for content-driven websites" },
+    { name: "GitHub", url: "https://github.com", desc: "Where the world builds software" },
   ],
 }

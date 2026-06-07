@@ -4,6 +4,8 @@ description: "Building fast, content-focused websites with the Astro framework a
 date: 2026-05-10
 readingTime: "4 min read"
 tags: ["Astro", "Web Development", "Tutorial"]
+series: "Astro Blog Guide"
+seriesOrder: 2
 ---
 
 Astro is a modern static site generator that delivers lightning-fast performance by shipping zero JavaScript by default. In this post, I'll walk through setting up a blog with Astro and deploying it to GitHub Pages.

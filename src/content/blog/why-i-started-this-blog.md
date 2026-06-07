@@ -4,6 +4,8 @@ description: "The motivations behind creating a personal space on the web and wh
 date: 2026-04-15
 readingTime: "3 min read"
 tags: ["Personal", "Writing"]
+series: "Astro Blog Guide"
+seriesOrder: 1
 ---
 
 Every developer should have a blog. Not for clout or SEO, but because writing is thinking made visible.

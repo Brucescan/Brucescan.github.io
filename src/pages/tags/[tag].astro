@@ -11,14 +11,38 @@ export async function getStaticPaths() {
 
 const { tagName } = Astro.props;
 const allPosts = await getCollection("blog");
-const filtered = allPosts
+const published = allPosts.filter(p => !p.data.draft);
+const filtered = published
   .filter(p => p.data.tags.some(t => t.toLowerCase() === tagName.toLowerCase()))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 // All tags for sidebar
 const tagMap = new Map<string,number>();
-for (const post of allPosts) for (const tag of post.data.tags) tagMap.set(tag,(tagMap.get(tag)||0)+1);
+for (const post of published) for (const tag of post.data.tags) tagMap.set(tag,(tagMap.get(tag)||0)+1);
 const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).sort((a,b)=>b.count-a.count);
+
+// ── Constellation SVG data ──
+const cx=200, cy=200, radius=130;
+const constellationStars = filtered.map((p, i) => {
+  const angle = (2*Math.PI*i)/filtered.length - Math.PI/2;
+  return { id: p.id, title: p.data.title, x: cx + radius*Math.cos(angle), y: cy + radius*Math.sin(angle) };
+});
+// Generate constellation lines (connect adjacent in a pattern)
+function constellationLines(stars: typeof constellationStars): [number,number,number,number][] {
+  if (stars.length < 2) return [];
+  const lines: [number,number,number,number][] = [];
+  for (let i=0;i<stars.length-1;i++) lines.push([stars[i].x,stars[i].y,stars[i+1].x,stars[i+1].y]);
+  if (stars.length >= 3) lines.push([stars[0].x,stars[0].y,stars[stars.length-1].x,stars[stars.length-1].y]); // close loop
+  // Extra diagonals for 5+ stars
+  if (stars.length >= 5) {
+    for (let i=0;i<stars.length;i++) {
+      const j=(i+2)%stars.length;
+      if (i<j) lines.push([stars[i].x,stars[i].y,stars[j].x,stars[j].y]);
+    }
+  }
+  return lines;
+}
+const clines = constellationLines(constellationStars);
 ---
 
 <BaseLayout title={`${tagName} — Constellation`} description={`Articles tagged ${tagName}`}>
@@ -33,6 +57,33 @@ const allTags = Array.from(tagMap.entries()).map(([n,c])=>({name:n,count:c})).so
         {filtered.length} star{filtered.length!==1?'s':''} in this constellation
       </p>
     </header>
+
+    {/* Constellation diagram */}
+    {filtered.length >= 2 && (
+      <div style="display:flex;justify-content:center;margin-bottom:32px">
+        <svg width="400" height="280" viewBox="0 0 400 400" style="max-width:100%;height:auto" aria-hidden="true">
+          {/* Background glow */}
+          <circle cx={cx} cy={cy} r={radius+30} fill="none" stroke="rgba(255,208,102,0.05)" stroke-width="40"/>
+          {/* Constellation lines */}
+          {clines.map(([x1,y1,x2,y2]) => (
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,208,102,0.2)" stroke-width="1.5" stroke-dasharray="4 3">
+              <animate attributeName="stroke-opacity" values="0.15;0.35;0.15" dur="3s" repeatCount="indefinite"/>
+            </line>
+          ))}
+          {/* Stars */}
+          {constellationStars.map((s, i) => (
+            <g>
+              <circle cx={s.x} cy={s.y} r="6" fill="var(--star-gold)" opacity="0.2">
+                <animate attributeName="r" values="6;12;6" dur="2s" begin={`${i*0.3}s`} repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.15;0.4;0.15" dur="2s" begin={`${i*0.3}s`} repeatCount="indefinite"/>
+              </circle>
+              <circle cx={s.x} cy={s.y} r="3" fill="var(--star-gold)" style="filter:drop-shadow(0 0 6px var(--star-glow))"/>
+              <text x={s.x} y={s.y-12} text-anchor="middle" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="6">{s.title.slice(0,12)}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    )}
 
     <!-- All constellations -->
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:32px;align-items:center">
