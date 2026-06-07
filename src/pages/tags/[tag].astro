@@ -1,7 +1,5 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import BlogCard from "../../components/BlogCard.astro";
-import TagsBar from "../../components/TagsBar.astro";
 import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
@@ -38,75 +36,30 @@ const allTags = Array.from(tagMap.entries())
   .sort((a, b) => a.name.localeCompare(b.name));
 ---
 
-<BaseLayout title={`${tagName} — Spell School`}>
-  <section class="section">
-    <div class="container">
-      <a href="/#posts" class="back-link">
-        ◀ Return to Quest Log
-      </a>
-
-      <h2 class="section-title">
-        Spell School: {tagName}
-      </h2>
-      <p class="section-subtitle">
-        {filteredPosts.length} quest{filteredPosts.length !== 1 ? "s" : ""} found in this school
-      </p>
-
-      {allTags.length > 0 && <TagsBar tags={allTags} activeTag={tagName} />}
-
-      {
-        filteredPosts.length === 0 ? (
-          <div class="empty-state">
-            <p>No quests found in this spell school yet...</p>
-            <p class="empty-hint">The grimoire grows with time.</p>
-          </div>
-        ) : (
-          <div class="blog-grid">
-            {filteredPosts.map((post) => (
-              <BlogCard
-                title={post.data.title}
-                description={post.data.description}
-                date={post.data.date.toISOString()}
-                slug={post.id}
-                readingTime={post.data.readingTime}
-                tags={post.data.tags}
-              />
-            ))}
-          </div>
-        )
-      }
+<BaseLayout title={`${tagName} — Spell School`} autoOpen="tags">
+  <Fragment slot="icons">
+    <div class="desk-icon" data-action="open-window" data-target="questlog" title="Quest Log">
+      <div class="desk-icon-sprite">📖</div>
+      <div class="desk-icon-label">Quest Log</div>
     </div>
-  </section>
+    <div class="desk-icon" data-action="open-window" data-target="about" title="README.txt">
+      <div class="desk-icon-sprite">ℹ️</div>
+      <div class="desk-icon-label">README.txt</div>
+    </div>
+  </Fragment>
+
+  <!-- SEO content -->
+  <div id="seo-content" style="display:none" aria-hidden="true">
+    <h1>Tag: {tagName}</h1>
+    <p>{filteredPosts.length} articles</p>
+    <ul>
+      {filteredPosts.map((post) => (
+        <li><a href={`/blog/${post.id}`}>{post.data.title}</a></li>
+      ))}
+    </ul>
+  </div>
+
+  <!-- Tag data -->
+  <script set:html={`window._tagData = ${JSON.stringify(allTags)};`}></script>
+  <script set:html={`window._activeTag = ${JSON.stringify(tagName)};`}></script>
 </BaseLayout>
-
-<style>
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-pixel);
-    font-size: var(--text-2xs);
-    color: var(--color-text-dim);
-    text-decoration: none;
-    margin-bottom: var(--space-xl);
-    transition: color var(--transition-fast);
-    text-transform: uppercase;
-  }
-  .back-link:hover { color: var(--color-gold); }
-
-  .empty-state {
-    text-align: center;
-    padding: var(--space-3xl) var(--space-xl);
-    background: var(--color-surface);
-    border: 3px dashed var(--color-border-dim);
-    font-family: var(--font-pixel);
-    font-size: var(--text-xs);
-    color: var(--color-text-dim);
-  }
-  .empty-hint {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    margin-top: var(--space-sm);
-  }
-</style>

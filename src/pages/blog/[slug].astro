@@ -24,13 +24,8 @@ const bodyText = post.body || "";
 const chineseChars = (bodyText.match(/[一-鿿]/g) || []).length;
 const englishWords = (bodyText.match(/[a-zA-Z]+/g) || []).length;
 const readingMinutes = Math.max(1, Math.ceil(Math.max(chineseChars / 400, englishWords / 200)));
-const readingTime = `${readingMinutes} min read`;
 
 const allPosts = await getCollection("blog");
-const relatedPosts = allPosts
-  .filter((p) => p.id !== id && p.data.tags.some((t) => post.data.tags.includes(t)))
-  .slice(0, 2);
-
 const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
   year: "numeric", month: "long", day: "numeric",
 });
@@ -43,104 +38,52 @@ const prevPost = currentIndex > 0 ? sortedAll[currentIndex - 1] : null;
 const nextPost = currentIndex < sortedAll.length - 1 ? sortedAll[currentIndex + 1] : null;
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description}>
-  <article class="post">
-    <!-- Tome header -->
-    <header class="post-header container">
-      <a href="/#posts" class="back-link">
-        ◀ Return to Quest Log
-      </a>
+<BaseLayout title={post.data.title} description={post.data.description} autoOpen={`article-${id}`}>
+  <!-- Desktop icon to return to this article -->
+  <Fragment slot="icons">
+    <div class="desk-icon" data-action="open-window" data-target="questlog" title="Quest Log — Browse all articles">
+      <div class="desk-icon-sprite">📖</div>
+      <div class="desk-icon-label">Quest Log</div>
+    </div>
+    <div class="desk-icon" data-action="open-window" data-target="tags" title="Spell Schools">
+      <div class="desk-icon-sprite">📁</div>
+      <div class="desk-icon-label">Spell Schools</div>
+    </div>
+    <div class="desk-icon" data-action="open-window" data-target="about" title="README.txt">
+      <div class="desk-icon-sprite">ℹ️</div>
+      <div class="desk-icon-label">README.txt</div>
+    </div>
+  </Fragment>
 
-      <div class="post-meta">
-        <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
-        <span class="dot">·</span>
-        <span class="meta-item">
-          <span class="meta-icon">⏱</span> {readingTime}
-        </span>
-        {post.data.tags && post.data.tags.length > 0 && (
-          <>
-            <span class="dot">·</span>
-            <span class="post-header-tags">
-              {post.data.tags.map((tag) => (
-                <a href={`/tags/${tag.toLowerCase()}`} class="post-header-tag">#{tag}</a>
-              ))}
-            </span>
-          </>
-        )}
+  <!-- SEO: Full article content visible to search engines -->
+  <div id="seo-content" style="display:none" aria-hidden="true">
+    <article>
+      <h1>{post.data.title}</h1>
+      <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+      <Content />
+    </article>
+  </div>
+
+  <!-- Pass full article HTML as a template for the window -->
+  <div id="article-full-content" style="display:none">
+    <div style="padding:8px">
+      <div style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--win-shadow);font-size:var(--text-xs);color:var(--text-secondary)">
+        📅 {formattedDate} &nbsp;·&nbsp; ⏱ ~{readingMinutes} min read &nbsp;·&nbsp;
+        {post.data.tags.map(tag => (
+          <a href={`/tags/${tag.toLowerCase()}`} style="margin:0 2px;color:var(--accent-blue)">#{tag}</a>
+        ))}
       </div>
-
-      <h1 class="post-title">{post.data.title}</h1>
-      <p class="post-desc">{post.data.description}</p>
-    </header>
-
-    <!-- Two-column layout: TOC sidebar + content -->
-    <div class="post-layout container">
-      <aside class="post-toc-sidebar" aria-label="Table of Contents">
-        <nav class="toc" id="toc">
-          <div class="toc-title">📜 Scroll Map</div>
-          <ul class="toc-list" id="tocList"></ul>
-        </nav>
-      </aside>
-
-      <div class="post-body" id="postBody">
-        <!-- Reading countdown -->
-        <div class="reading-countdown" id="readingCountdown">
-          <span>⏳</span>
-          <span id="readingTimeLeft">~{readingMinutes} min left</span>
-        </div>
-
-        <Content />
-
-        <!-- Share section -->
-        <div class="share-section">
-          <div class="share-title">Share this scroll</div>
-          <div class="share-buttons">
-            <button class="share-btn" id="copyLinkBtn" aria-label="Copy link">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="5" y="5" width="9" height="9"/>
-                <path d="M11 4.5V3H3v6.5h1.5" stroke-linecap="square" stroke-linejoin="miter"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {
-          relatedPosts.length > 0 && (
-            <div class="related-posts">
-              <h3 class="related-title">Related Quests</h3>
-              <div class="related-grid">
-                {relatedPosts.map((rp) => (
-                  <a href={`/blog/${rp.id}`} class="related-card">
-                    <div class="related-card-title">{rp.data.title}</div>
-                    <div class="related-card-date">
-                      {rp.data.date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )
-        }
-
-        <!-- Prev / Next navigation -->
-        <nav class="post-nav" aria-label="Adjacent quests">
-          {prevPost ? (
-            <a href={`/blog/${prevPost.id}`} class="post-nav-link prev">
-              <span class="post-nav-label">◀ Previous Quest</span>
-              <span class="post-nav-title">{prevPost.data.title}</span>
-            </a>
-          ) : <span class="post-nav-link prev empty" />}
-
-          {nextPost ? (
-            <a href={`/blog/${nextPost.id}`} class="post-nav-link next">
-              <span class="post-nav-label">Next Quest ▶</span>
-              <span class="post-nav-title">{nextPost.data.title}</span>
-            </a>
-          ) : <span class="post-nav-link next empty" />}
-        </nav>
+      <Content />
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--win-shadow);display:flex;justify-content:space-between;align-items:center">
+        {prevPost ? (
+          <a href={`/blog/${prevPost.id}`} style="font-size:var(--text-xs);color:var(--accent-blue)">◀ {prevPost.data.title}</a>
+        ) : <span></span>}
+        {nextPost ? (
+          <a href={`/blog/${nextPost.id}`} style="font-size:var(--text-xs);color:var(--accent-blue)">{nextPost.data.title} ▶</a>
+        ) : <span></span>}
       </div>
     </div>
-  </article>
+  </div>
 
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
@@ -153,284 +96,6 @@ const nextPost = currentIndex < sortedAll.length - 1 ? sortedAll[currentIndex + 
   })}>
   </script>
 
-  <script>
-    // Reading countdown
-    (function() {
-      var el = document.getElementById("readingTimeLeft");
-      var countdown = document.getElementById("readingCountdown");
-      if (!el || !countdown) return;
-      var totalMin = parseInt(el.textContent) || 5;
-      el.textContent = "~" + totalMin + " min left";
-
-      window.addEventListener("scroll", function() {
-        var h = document.documentElement.scrollHeight - window.innerHeight;
-        var pct = h > 0 ? window.scrollY / h : 0;
-        var remaining = Math.max(1, Math.round(totalMin * (1 - pct)));
-        el.textContent = "~" + remaining + " min left";
-        if (pct > 0.95) countdown.classList.add("done");
-        else countdown.classList.remove("done");
-      }, { passive: true });
-    })();
-
-    // Copy link
-    document.getElementById("copyLinkBtn")?.addEventListener("click", function() {
-      navigator.clipboard.writeText(window.location.href).then(function() {
-        var btn = document.getElementById("copyLinkBtn");
-        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="#44ee44" stroke-width="2"><path d="M3 8l3.5 3.5L13 5" stroke-linecap="square" stroke-linejoin="miter"/></svg>';
-        setTimeout(function() {
-          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="9" height="9"/><path d="M11 4.5V3H3v6.5h1.5" stroke-linecap="square" stroke-linejoin="miter"/></svg>';
-        }, 2000);
-      });
-    });
-
-    // Build TOC
-    (function() {
-      const postBody = document.getElementById("postBody");
-      const tocList = document.getElementById("tocList");
-      const toc = document.getElementById("toc");
-      if (!postBody || !tocList) return;
-
-      const headings = postBody.querySelectorAll("h2, h3");
-      if (headings.length === 0) {
-        toc?.remove();
-        return;
-      }
-
-      const tocItems = [];
-
-      headings.forEach((h, i) => {
-        const id = `heading-${i}`;
-        h.id = id;
-
-        const item = document.createElement("li");
-        item.className = "toc-item";
-        item.style.paddingLeft = h.tagName === "H3" ? "var(--space-lg)" : "var(--space-sm)";
-
-        const link = document.createElement("a");
-        link.className = "toc-link";
-        link.href = `#${id}`;
-        link.textContent = h.textContent;
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          h.scrollIntoView({ behavior: "smooth", block: "start" });
-          history.pushState(null, "", `#${id}`);
-        });
-
-        item.appendChild(link);
-        tocList.appendChild(item);
-        tocItems.push({ item, id });
-      });
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            const idx = tocItems.findIndex((t) => t.id === entry.target.id);
-            if (idx !== -1 && entry.isIntersecting) {
-              tocItems.forEach((t) => t.item.classList.remove("active"));
-              tocItems[idx].item.classList.add("active");
-            }
-          });
-        },
-        { rootMargin: "-80px 0px -60% 0px", threshold: 0 }
-      );
-
-      headings.forEach((h) => observer.observe(h));
-
-      // Wrap tables
-      postBody.querySelectorAll("table").forEach(function(table) {
-        if (!table.parentElement.classList.contains("table-wrapper")) {
-          var wrapper = document.createElement("div");
-          wrapper.className = "table-wrapper";
-          table.parentNode.insertBefore(wrapper, table);
-          wrapper.appendChild(table);
-        }
-      });
-    })();
-  </script>
+  <!-- Register article content for window manager -->
+  <script set:html={`window._articleHTML_${id} = document.getElementById('article-full-content')?.innerHTML || '';`}></script>
 </BaseLayout>
-
-<style>
-  .post {
-    padding: var(--space-3xl) 0 var(--space-4xl);
-  }
-
-  .post-header {
-    margin-bottom: var(--space-2xl);
-    padding-bottom: var(--space-2xl);
-    border-bottom: 3px double var(--color-border-bright);
-  }
-
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-pixel);
-    font-size: var(--text-2xs);
-    color: var(--color-text-dim);
-    text-decoration: none;
-    margin-bottom: var(--space-xl);
-    transition: color var(--transition-fast);
-    text-transform: uppercase;
-  }
-  .back-link:hover { color: var(--color-gold); }
-
-  .post-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    margin-bottom: var(--space-lg);
-    flex-wrap: wrap;
-  }
-
-  .dot { color: var(--color-border); }
-
-  .meta-icon { font-size: 0.8rem; }
-
-  .post-header-tags {
-    display: inline-flex;
-    gap: 6px;
-  }
-
-  .post-header-tag {
-    font-family: var(--font-pixel);
-    font-size: 0.45rem;
-    color: var(--color-mp);
-    background: var(--color-bg);
-    padding: 2px 8px;
-    border: 1px solid var(--color-mp-dim);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-  }
-  .post-header-tag:hover { color: var(--color-gold); border-color: var(--color-gold); }
-
-  .post-title {
-    font-family: var(--font-pixel);
-    font-size: var(--text-xl);
-    color: var(--color-gold);
-    text-shadow: 2px 2px 0 var(--color-gold-dim);
-    line-height: 1.3;
-    margin-bottom: var(--space-md);
-    letter-spacing: 0.04em;
-  }
-
-  .post-desc {
-    font-family: var(--font-mono);
-    font-size: var(--text-base);
-    color: var(--color-text-dim);
-    line-height: 1.6;
-    max-width: 600px;
-  }
-
-  /* Two-column layout */
-  .post-layout {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: var(--space-3xl);
-    align-items: start;
-  }
-
-  .post-toc-sidebar {
-    position: sticky;
-    top: calc(var(--header-height) + var(--space-xl));
-  }
-
-  .post-body {
-    min-width: 0;
-  }
-
-  /* Reading countdown */
-  .reading-countdown {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    font-family: var(--font-pixel);
-    font-size: var(--text-2xs);
-    color: var(--color-text-dim);
-    background: var(--color-bg-alt);
-    border: 2px solid var(--color-border-dim);
-    position: sticky;
-    top: calc(var(--header-height) + var(--space-md));
-    float: right;
-    margin-left: var(--space-lg);
-    margin-bottom: var(--space-md);
-    z-index: 5;
-    white-space: nowrap;
-    transition: opacity 0.2s steps(4);
-  }
-
-  .reading-countdown.done { opacity: 0.4; }
-
-  /* Post navigation */
-  .post-nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-md);
-    margin-top: var(--space-3xl);
-    padding-top: var(--space-2xl);
-    border-top: 3px double var(--color-border-dim);
-  }
-
-  .post-nav-link {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-    padding: var(--space-lg);
-    background: var(--color-surface);
-    border: 3px solid;
-    border-color: var(--color-border-bright) var(--color-border-dim) var(--color-border-dim) var(--color-border-bright);
-    text-decoration: none;
-    color: inherit;
-    transition: all var(--transition-fast);
-  }
-  .post-nav-link:hover {
-    border-color: var(--color-gold);
-    background: var(--color-surface-hover);
-    transform: translateY(-2px);
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
-  }
-  .post-nav-link.next { text-align: right; align-items: flex-end; }
-  .post-nav-link.empty { visibility: hidden; }
-
-  .post-nav-label {
-    font-family: var(--font-pixel);
-    font-size: var(--text-2xs);
-    color: var(--color-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .post-nav-title {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-gold);
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  @media (max-width: 1024px) {
-    .post-layout { grid-template-columns: 1fr; }
-    .post-toc-sidebar { display: none; }
-  }
-
-  @media (max-width: 768px) {
-    .post-title { font-size: var(--text-lg); }
-    .post-body { font-size: var(--text-base); }
-
-    .post-nav { grid-template-columns: 1fr; }
-    .post-nav-link.next { text-align: left; align-items: flex-start; }
-
-    .reading-countdown {
-      float: none;
-      display: flex;
-      justify-content: center;
-      margin: var(--space-md) 0;
-    }
-  }
-</style>

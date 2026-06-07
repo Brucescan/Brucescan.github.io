@@ -1,7 +1,6 @@
-// Site-wide configuration — Pixel Quest theme
 export const site = {
   title: "Flazi的桃花源",
-  description: "A pixel quest through code, design, and technology.",
+  description: "A retro fantasy operating system. Explore quests, learn spells, discover knowledge.",
   author: "Flazi",
   url: "https://brucescan.github.io",
   base: "/",
@@ -11,7 +10,7 @@ export const site = {
   },
   nav: [
     { label: "Home", href: "/" },
-    { label: "Quests", href: "/#posts" },
-    { label: "Info", href: "/#about" },
+    { label: "Blog", href: "/#posts" },
+    { label: "About", href: "/#about" },
   ],
 }
