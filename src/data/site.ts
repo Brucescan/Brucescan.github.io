@@ -1,18 +1,17 @@
-// Site-wide configuration — edit this to personalize your blog
+// Site-wide configuration — Pixel Quest theme
 export const site = {
   title: "Flazi的桃花源",
-  description: "Thoughts on code.",
+  description: "A pixel quest through code, design, and technology.",
   author: "Flazi",
   url: "https://brucescan.github.io",
   base: "/",
   lang: "zh-CN",
   social: {
     github: "https://github.com/brucescan",
-    // twitter: "https://twitter.com/yourusername",
   },
   nav: [
     { label: "Home", href: "/" },
-    { label: "Blog", href: "/#posts" },
-    { label: "About", href: "/#about" },
+    { label: "Quests", href: "/#posts" },
+    { label: "Info", href: "/#about" },
   ],
 }

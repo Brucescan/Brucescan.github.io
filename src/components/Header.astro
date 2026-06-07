@@ -6,15 +6,17 @@ const currentPath = Astro.url.pathname;
 function isActive(href: string): boolean {
   if (href === "/") return currentPath === "/";
   if (href === "/#posts") return currentPath.startsWith("/blog") || currentPath.startsWith("/tags");
-  if (href === "/#about") return false; // scroll-spy only on homepage
+  if (href === "/#about") return false;
   return currentPath === href;
 }
 ---
 
 <header class="header">
   <div class="header-inner container">
-    <a href="/" class="logo">
-      <span class="logo-text">Flazi</span>
+    <a href="/" class="logo" aria-label="Home">
+      <span class="logo-icon">⚔</span>
+      <span class="logo-text">FLAZI</span>
+      <span class="logo-lv">Lv.99</span>
     </a>
 
     <div class="header-actions">
@@ -24,8 +26,9 @@ function isActive(href: string): boolean {
             <a
               href={item.href}
               data-nav={item.label.toLowerCase()}
-              class:list={["nav-link lggc", { active: isActive(item.href) }]}
+              class:list={["nav-link", { active: isActive(item.href) }]}
             >
+              <span class="nav-cursor" aria-hidden="true">▶</span>
               {item.label}
             </a>
           ))
@@ -33,26 +36,24 @@ function isActive(href: string): boolean {
       </nav>
 
       <div class="header-tools">
-        <button class="search-trigger lggc" id="searchTrigger" aria-label="Search">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <!-- Search trigger -->
+        <button class="search-trigger" id="searchTrigger" aria-label="Search">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="7" cy="7" r="4.5"/>
-            <path d="M10.5 10.5L14 14" stroke-linecap="round"/>
+            <path d="M10.5 10.5L14 14" stroke-linecap="square"/>
           </svg>
           <span class="shortcut-label">Search</span>
           <span class="shortcut">⌘K</span>
         </button>
 
-        <button class="theme-toggle lggc" id="themeToggle" aria-label="Toggle dark mode">
-          <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="8" cy="8" r="3.5"/>
-            <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke-linecap="round"/>
-          </svg>
-          <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M13.5 10.5A6 6 0 015.5 2.5 6 6 0 1013.5 10.5z" stroke-linejoin="round"/>
-          </svg>
+        <!-- Theme toggle -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle light mode" title="Toggle light/dark mode">
+          <span class="theme-icon-dark">☀</span>
+          <span class="theme-icon-light">☾</span>
         </button>
 
-        <button class="hamburger-btn lggc" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+        <!-- Mobile menu -->
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
           <span class="hamburger-line"></span>
         </button>
       </div>
@@ -69,7 +70,7 @@ function isActive(href: string): boolean {
         href={item.href}
         class:list={["mobile-nav-link", { active: currentPath === item.href }]}
       >
-        {item.label}
+        ▶ {item.label}
       </a>
     ))
   }
@@ -77,11 +78,9 @@ function isActive(href: string): boolean {
 
 <script>
   (function() {
-    // Mobile nav
     var btn = document.getElementById("hamburgerBtn");
     var overlay = document.getElementById("mobileNavOverlay");
     var panel = document.getElementById("mobileNavPanel");
-
     var isOpen = false;
 
     function open() {
@@ -107,9 +106,7 @@ function isActive(href: string): boolean {
     }
 
     if (btn && overlay && panel) {
-      btn.addEventListener("click", function() {
-        isOpen ? close() : open();
-      });
+      btn.addEventListener("click", function() { isOpen ? close() : open(); });
       overlay.addEventListener("click", close);
       document.addEventListener("keydown", function(e) {
         if (e.key === "Escape" && isOpen) close();
@@ -119,21 +116,19 @@ function isActive(href: string): boolean {
       });
     }
 
-    // Scroll-spy for homepage nav (/#posts, /#about)
+    // Scroll-spy for homepage nav
     var postsSection = document.getElementById("posts");
     var aboutSection = document.getElementById("about");
     if (postsSection || aboutSection) {
       var navLinks = document.querySelectorAll("[data-nav]");
       function updateNav() {
-        var scrollY = window.scrollY + 80; // offset for header
+        var scrollY = window.scrollY + 80;
         var active = "home";
-
         if (aboutSection && scrollY >= aboutSection.offsetTop) {
           active = "about";
         } else if (postsSection && scrollY >= postsSection.offsetTop) {
           active = "blog";
         }
-
         navLinks.forEach(function(link) {
           var navName = link.getAttribute("data-nav");
           link.classList.toggle("active", navName === active);
@@ -150,13 +145,12 @@ function isActive(href: string): boolean {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: var(--color-header-bg);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    border-bottom: 4px solid var(--color-border-bright);
     height: var(--header-height);
     display: flex;
     align-items: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3);
   }
 
   .header-inner {
@@ -166,92 +160,151 @@ function isActive(href: string): boolean {
     height: 100%;
   }
 
+  /* ── Logo ── */
   .logo {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--text-lg);
-    font-weight: 600;
-    color: var(--color-text);
+    gap: 6px;
     text-decoration: none;
-    letter-spacing: -0.02em;
-    transition: opacity var(--transition-fast);
     flex-shrink: 0;
+    color: var(--color-gold);
+  }
+  .logo:hover { color: var(--color-hp); }
+
+  .logo-icon {
+    font-size: 1.2rem;
+    animation: sprite-bob 2s steps(4) infinite;
   }
 
-  .logo:hover {
-    opacity: 0.8;
-    color: var(--color-text);
+  .logo-text {
+    font-family: var(--font-pixel);
+    font-size: var(--text-xs);
+    color: inherit;
+    letter-spacing: 0.08em;
+  }
+
+  .logo-lv {
+    font-family: var(--font-pixel);
+    font-size: 0.45rem;
+    color: var(--color-mp);
+    background: var(--color-bg);
+    padding: 2px 6px;
+    border: 1px solid var(--color-mp-dim);
   }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-sm);
   }
 
+  /* ── Navigation ── */
   .nav {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: 2px;
   }
 
   .nav-link {
-    --lggc-padding: 6px 14px;
-    --lggc-radius: 980px;
-    --lggc-blur: 4px;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--color-text-secondary);
+    font-family: var(--font-pixel);
+    font-size: 0.5rem;
+    color: var(--color-text-dim);
     text-decoration: none;
-    min-width: auto;
-    min-height: auto;
+    padding: 6px 12px;
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    position: relative;
+  }
+
+  .nav-cursor {
+    opacity: 0;
+    font-size: 0.4rem;
+    margin-right: 2px;
   }
 
   .nav-link:hover {
-    color: var(--color-text);
+    color: var(--color-gold);
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-dim);
   }
 
   .nav-link.active {
-    --lggc-bg: rgba(0, 0, 0, 0.06);
-    color: var(--color-text);
+    color: var(--color-gold);
+    border-color: var(--color-border-bright);
+    background: var(--color-bg-alt);
+  }
+  .nav-link.active .nav-cursor {
+    opacity: 1;
+    animation: cursor-blink 1s steps(2) infinite;
   }
 
-  [data-theme="dark"] .nav-link.active {
-    --lggc-bg: rgba(255, 255, 255, 0.1);
-  }
-
+  /* ── Header tools ── */
   .header-tools {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
   }
 
+  .search-trigger {
+    font-family: var(--font-pixel);
+    font-size: 0.45rem;
+    color: var(--color-text-dim);
+    background: var(--color-bg-alt);
+    border: 2px solid var(--color-border-dim);
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+    text-transform: uppercase;
+  }
+  .search-trigger:hover {
+    color: var(--color-gold);
+    border-color: var(--color-gold);
+  }
+  .search-trigger svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .search-trigger .shortcut {
+    font-family: var(--font-pixel);
+    font-size: 0.4rem;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border-dim);
+    padding: 1px 4px;
+  }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    width: 36px; height: 36px;
+    font-size: 1.1rem;
+    background: var(--color-bg-alt);
+    border: 2px solid var(--color-border-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    line-height: 1;
+  }
+  .theme-toggle:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+
+  .theme-icon-dark { display: block; }
+  .theme-icon-light { display: none; }
+  [data-theme="light"] .theme-icon-dark { display: none; }
+  [data-theme="light"] .theme-icon-light { display: block; }
+
   @media (max-width: 768px) {
-    .nav {
-      display: none;
-    }
+    .nav { display: none; }
+    .search-trigger .shortcut-label { display: none; }
+    .search-trigger .shortcut { display: none; }
+    .search-trigger { padding: 8px; }
   }
 
   @media (max-width: 480px) {
-    .search-trigger .shortcut-label {
-      display: none;
-    }
-
-    .search-trigger .shortcut {
-      display: none;
-    }
-
-    .search-trigger {
-      padding: var(--space-xs);
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-    }
-
-    .search-trigger svg {
-      width: 16px;
-      height: 16px;
-    }
+    .logo-lv { display: none; }
   }
 </style>

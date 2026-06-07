@@ -2,28 +2,45 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Page not found">
+<BaseLayout title="Game Over">
   <section class="not-found">
     <div class="container">
-      <div class="nf-card lggc">
-        <span class="nf-code">404</span>
-        <h1 class="nf-title">Lost in the glass</h1>
-        <p class="nf-desc">This page drifted away like a floating orb. Let's get you back.</p>
-        <div class="nf-actions">
-          <a href="/" class="btn btn-primary lggc">Back home</a>
-          <button class="btn btn-secondary lggc" id="nfSearchBtn">Search</button>
+      <!-- Game Over screen -->
+      <div class="gameover-screen">
+        <div class="gameover-title">GAME OVER</div>
+        <div class="gameover-code">ERROR 404</div>
+
+        <div class="gameover-divider">
+          <span>▼</span>
+        </div>
+
+        <div class="gameover-dialog dialog-box dialog-box--pointer">
+          <p>A mysterious force blocks your path...</p>
+          <p>This page has vanished into the void between dimensions.</p>
+        </div>
+
+        <div class="gameover-actions">
+          <a href="/" class="pixel-btn pixel-btn--primary">
+            ▶ Continue (Home)
+          </a>
+          <button class="pixel-btn" id="nfSearchBtn">
+            🔍 Search
+          </button>
+        </div>
+
+        <!-- Decorative pixel art -->
+        <div class="gameover-cat-wrap">
+          <canvas id="nfCatCanvas" width="64" height="64" aria-label="Pixel cat" title="Click me!"></canvas>
+          <p class="gameover-cat-hint" id="nfCatHint">▶ Click the cat</p>
         </div>
       </div>
-
-      <canvas id="nfCat" width="64" height="64" aria-hidden="true" title="Click me!"></canvas>
-      <p class="nf-cat-hint" id="nfCatHint">Click the cat</p>
     </div>
   </section>
 </BaseLayout>
 
 <script>
   (function() {
-    var c = document.getElementById("nfCat");
+    var c = document.getElementById("nfCatCanvas");
     if (!c) return;
     var ctx = c.getContext("2d");
     if (!ctx) return;
@@ -35,30 +52,30 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       ctx.clearRect(0, 0, 64, 64);
 
       if (squish) {
-        // Squished / surprised cat
-        ctx.fillStyle = "#ff9f43"; ctx.fillRect(18, 40, 28, 12);
-        ctx.fillStyle = "#ffbe76"; ctx.fillRect(14, 22, 36, 20);
-        ctx.fillStyle = "#ff9f43"; ctx.fillRect(14, 10, 10, 14); ctx.fillRect(40, 10, 10, 14);
-        ctx.fillStyle = "#2d3436"; ctx.fillRect(22, 24, 8, 8); ctx.fillRect(34, 24, 8, 8);
+        // Squished / surprised pixel cat
+        ctx.fillStyle = "#ff7733"; ctx.fillRect(18, 40, 28, 12);
+        ctx.fillStyle = "#ff9944"; ctx.fillRect(14, 22, 36, 20);
+        ctx.fillStyle = "#ff7733"; ctx.fillRect(14, 10, 10, 14); ctx.fillRect(40, 10, 10, 14);
+        ctx.fillStyle = "#0b0b1f"; ctx.fillRect(22, 24, 8, 8); ctx.fillRect(34, 24, 8, 8);
         ctx.fillStyle = "#fff"; ctx.fillRect(24, 25, 4, 4); ctx.fillRect(36, 25, 4, 4);
-        ctx.fillStyle = "#e17055"; ctx.fillRect(28, 36, 8, 4);
-        ctx.fillStyle = "#ffbe76"; ctx.fillRect(18, 50, 12, 8); ctx.fillRect(34, 50, 12, 8);
-        ctx.fillStyle = "#ff9f43"; ctx.fillRect(0, 38, 10, 8); ctx.fillRect(54, 38, 10, 8);
+        ctx.fillStyle = "#ee3333"; ctx.fillRect(28, 36, 8, 4);
+        ctx.fillStyle = "#ff9944"; ctx.fillRect(18, 50, 12, 8); ctx.fillRect(34, 50, 12, 8);
+        ctx.fillStyle = "#ff7733"; ctx.fillRect(0, 38, 10, 8); ctx.fillRect(54, 38, 10, 8);
       } else {
         // Idle cat
-        ctx.fillStyle = "#ff9f43"; ctx.fillRect(20, 24, 24, 20);
-        ctx.fillStyle = "#ffbe76"; ctx.fillRect(16, 8, 32, 20);
-        ctx.fillStyle = "#ff9f43"; ctx.fillRect(16, 0, 8, 12); ctx.fillRect(40, 0, 8, 12);
-        ctx.fillStyle = "#fdcb6e"; ctx.fillRect(18, 2, 4, 8); ctx.fillRect(42, 2, 4, 8);
-        ctx.fillStyle = "#2d3436"; ctx.fillRect(24, 14, 4, 6); ctx.fillRect(36, 14, 4, 6);
+        ctx.fillStyle = "#ff7733"; ctx.fillRect(20, 24, 24, 20);
+        ctx.fillStyle = "#ff9944"; ctx.fillRect(16, 8, 32, 20);
+        ctx.fillStyle = "#ff7733"; ctx.fillRect(16, 0, 8, 12); ctx.fillRect(40, 0, 8, 12);
+        ctx.fillStyle = "#ffcc66"; ctx.fillRect(18, 2, 4, 8); ctx.fillRect(42, 2, 4, 8);
+        ctx.fillStyle = "#0b0b1f"; ctx.fillRect(24, 14, 4, 6); ctx.fillRect(36, 14, 4, 6);
         ctx.fillStyle = "#fff"; ctx.fillRect(26, 14, 2, 2); ctx.fillRect(38, 14, 2, 2);
-        ctx.fillStyle = "#e17055"; ctx.fillRect(30, 20, 4, 3);
-        ctx.fillStyle = "#2d3436"; ctx.fillRect(28, 24, 8, 2);
-        ctx.fillStyle = "#ffbe76"; ctx.fillRect(20, 44, 10, 6); ctx.fillRect(34, 44, 10, 6);
+        ctx.fillStyle = "#ee3333"; ctx.fillRect(30, 20, 4, 3);
+        ctx.fillStyle = "#0b0b1f"; ctx.fillRect(28, 24, 8, 2);
+        ctx.fillStyle = "#ff9944"; ctx.fillRect(20, 44, 10, 6); ctx.fillRect(34, 44, 10, 6);
 
         // Tail wag
         var tail = Math.sin(animFrame * 0.15) * 3;
-        ctx.fillStyle = "#ff9f43";
+        ctx.fillStyle = "#ff7733";
         ctx.fillRect(42 + tail, 26, 6, 4);
         ctx.fillRect(44 + tail, 22, 5, 5);
       }
@@ -73,18 +90,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     drawCat(false);
     animate();
 
-    // Click interaction
     var hint = document.getElementById("nfCatHint");
     c.addEventListener("click", function() {
       squished = true;
-      if (hint) hint.textContent = "Boop!";
+      if (hint) hint.textContent = "Boop! ★";
       setTimeout(function() {
         squished = false;
-        if (hint) hint.textContent = "Click the cat";
+        if (hint) hint.textContent = "▶ Click the cat";
       }, 400);
     });
 
-    // Search button — trigger via BaseLayout's search trigger
+    // Search button
     var searchBtn = document.getElementById("nfSearchBtn");
     if (searchBtn) {
       searchBtn.addEventListener("click", function() {
@@ -92,7 +108,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         if (trigger) {
           trigger.click();
         } else {
-          // Fallback
           var overlay = document.getElementById("searchOverlay");
           if (overlay) {
             overlay.classList.add("active");
@@ -109,116 +124,91 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 <style>
   .not-found {
     padding: var(--space-4xl) 0;
-    min-height: 70vh;
+    min-height: 75vh;
     display: flex;
     align-items: center;
   }
 
   .not-found .container {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .gameover-screen {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--space-xl);
+    max-width: 500px;
+    width: 100%;
   }
 
-  .nf-card {
-    --lggc-radius: 28px;
-    --lggc-padding: var(--space-3xl);
-    --lggc-bg: rgba(255, 255, 255, 0.55);
+  .gameover-title {
+    font-family: var(--font-pixel);
+    font-size: var(--text-3xl);
+    color: var(--color-danger);
+    text-shadow:
+      3px 3px 0 var(--color-danger-dim),
+      0 0 16px rgba(238,51,51,0.3);
+    letter-spacing: 0.12em;
+    animation: sprite-pulse 2s steps(4) infinite;
+  }
+
+  .gameover-code {
+    font-family: var(--font-pixel);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    letter-spacing: 0.08em;
+    margin-top: -8px;
+  }
+
+  .gameover-divider {
+    color: var(--color-border);
+    font-size: var(--text-sm);
+    animation: sprite-bob 1.5s steps(3) infinite;
+  }
+
+  .gameover-dialog {
+    width: 100%;
     text-align: center;
+  }
+
+  .gameover-dialog p {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    color: var(--color-text-dim);
+    margin-bottom: var(--space-xs);
+  }
+
+  .gameover-actions {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .gameover-cat-wrap {
+    margin-top: var(--space-xl);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-md);
-    max-width: 440px;
-  }
-
-  [data-theme="dark"] .nf-card {
-    --lggc-bg: rgba(255, 255, 255, 0.06);
-  }
-
-  .nf-code {
-    font-size: 6rem;
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    background: linear-gradient(135deg, var(--color-text) 0%, var(--color-text-tertiary) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .nf-title {
-    font-size: var(--text-2xl);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--color-text);
-  }
-
-  .nf-desc {
-    font-size: var(--text-base);
-    color: var(--color-text-secondary);
-    max-width: 320px;
-    line-height: 1.6;
-  }
-
-  .nf-actions {
-    display: flex;
     gap: var(--space-sm);
-    margin-top: var(--space-md);
   }
 
-  .nf-actions .btn {
-    font-size: var(--text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    letter-spacing: -0.01em;
-  }
-
-  .nf-actions .btn-primary {
-    --lggc-padding: 10px 24px;
-    --lggc-bg: rgba(0, 0, 0, 0.85);
-    color: #fff;
-  }
-
-  .nf-actions .btn-primary:hover {
-    --lggc-bg: rgba(0, 0, 0, 0.92);
-  }
-
-  [data-theme="dark"] .nf-actions .btn-primary {
-    --lggc-bg: rgba(255, 255, 255, 0.9);
-    color: #000;
-  }
-
-  .nf-actions .btn-secondary {
-    --lggc-padding: 10px 24px;
-    --lggc-bg: rgba(255, 255, 255, 0.6);
-    color: var(--color-text);
-  }
-
-  [data-theme="dark"] .nf-actions .btn-secondary {
-    --lggc-bg: rgba(255, 255, 255, 0.1);
-  }
-
-  #nfCat {
+  #nfCatCanvas {
     image-rendering: pixelated;
-    width: 80px;
-    height: 80px;
+    width: 96px;
+    height: 96px;
     cursor: pointer;
-    transition: transform var(--transition-spring);
-    opacity: 0.6;
+    transition: transform 0.1s steps(2);
   }
+  #nfCatCanvas:hover { transform: scale(1.1); }
 
-  #nfCat:hover {
-    transform: scale(1.15);
-    opacity: 0.9;
-  }
-
-  .nf-cat-hint {
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-    margin-top: -8px;
+  .gameover-cat-hint {
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    color: var(--color-text-dim);
+    animation: cursor-blink 1.5s steps(2) infinite;
   }
 </style>

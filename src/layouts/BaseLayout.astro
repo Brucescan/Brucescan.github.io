@@ -29,13 +29,12 @@ const searchIndex = allPosts.map((p) => ({
 ---
 
 <!doctype html>
-<html lang={site.lang} data-theme="light">
+<html lang={site.lang} data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={pageDescription} />
     <meta name="generator" content={Astro.generator} />
-    <link rel="stylesheet" href="/lggc.css" />
 
     <title>{pageTitle}</title>
     <link rel="canonical" href={pageUrl} />
@@ -54,10 +53,11 @@ const searchIndex = allPosts.map((p) => ({
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={ogImageUrl} />
 
+    <!-- Theme init — block render to prevent flash -->
     <script is:inline>
       (function() {
         var stored = localStorage.getItem("theme");
-        var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        var theme = stored || "dark";
         document.documentElement.setAttribute("data-theme", theme);
         if (!stored) {
           document.body && document.body.classList.add("no-transition");
@@ -78,25 +78,24 @@ const searchIndex = allPosts.map((p) => ({
     </script>
   </head>
   <body>
-    <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
+    <!-- Pixel particle layer -->
+    <div class="pixel-particles" id="pixelParticles" aria-hidden="true"></div>
 
-    <!-- Decorative glass orbs -->
-    <div class="glass-orb orb-1" aria-hidden="true"></div>
-    <div class="glass-orb orb-2" aria-hidden="true"></div>
-    <div class="glass-orb orb-3" aria-hidden="true"></div>
+    <!-- Reading progress bar -->
+    <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
 
     <!-- Search overlay -->
     <div class="search-overlay" id="searchOverlay" role="dialog" aria-label="Search">
       <div class="search-dialog">
         <div class="search-input-wrap">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="square"/>
           </svg>
-          <input type="text" class="search-input" id="searchInput" placeholder="Search articles..." autocomplete="off" />
-          <kbd class="search-kbd">Esc</kbd>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search quests..." autocomplete="off" />
+          <kbd class="search-kbd">ESC</kbd>
         </div>
         <div class="search-results" id="searchResults">
-          <div class="search-empty">Start typing to find articles...</div>
+          <div class="search-empty">Type to scry for articles...</div>
         </div>
       </div>
     </div>
@@ -111,31 +110,48 @@ const searchIndex = allPosts.map((p) => ({
     </main>
     <Footer />
 
+    <!-- Back to top -->
     <div class="back-to-top-wrap" id="backToTopWrap">
-      <svg class="progress-ring" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
-        <circle class="progress-ring-bg" cx="24" cy="24" r="20" />
-        <circle class="progress-ring-fill" cx="24" cy="24" r="20" id="progressRing" />
-      </svg>
-      <button class="back-to-top lggc" id="backToTop" aria-label="Back to top">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M8 13V3M3 8l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/>
+      <button class="back-to-top" id="backToTop" aria-label="Back to top">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 13V3M3 8l5-5 5 5" stroke-linecap="square" stroke-linejoin="miter"/>
         </svg>
       </button>
     </div>
 
+    <!-- Search index data -->
     <script type="application/json" id="searchIndex">
       {JSON.stringify(searchIndex)}
     </script>
 
+    <!-- ═══════════════════════════════════════════
+         PIXEL QUEST ENGINE — All interactive JS
+         ═══════════════════════════════════════════ -->
     <script>
       (function() {
+        // ── Pixel particles ──
+        var particleContainer = document.getElementById("pixelParticles");
+        if (particleContainer) {
+          for (var i = 0; i < 30; i++) {
+            var particle = document.createElement("div");
+            particle.className = "pixel-particle";
+            particle.style.left = Math.random() * 100 + "%";
+            particle.style.top = (60 + Math.random() * 40) + "%";
+            particle.style.animationDelay = Math.random() * 6 + "s";
+            particle.style.animationDuration = (4 + Math.random() * 8) + "s";
+            var colors = ["#ffd700","#44ee44","#4499ff","#ee88ff","#ff7733"];
+            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+            particleContainer.appendChild(particle);
+          }
+        }
+
+        // ── Search index ──
         var searchIndex = [];
         try {
           var raw = document.getElementById("searchIndex")?.textContent;
           if (raw) searchIndex = JSON.parse(raw);
         } catch(e) {}
 
-        // ── DOM refs ──
         var $ = function(id) { return document.getElementById(id); };
         var searchOverlay = $("searchOverlay");
         var searchInput   = $("searchInput");
@@ -145,7 +161,6 @@ const searchIndex = allPosts.map((p) => ({
         var backToTop     = $("backToTop");
         var themeToggle   = $("themeToggle");
 
-        // ── Helpers ──
         function escapeHtml(s) {
           var d = document.createElement("div");
           d.textContent = s;
@@ -168,9 +183,7 @@ const searchIndex = allPosts.map((p) => ({
         if (kbdHint && !sessionStorage.getItem("kbd-hint-shown")) {
           setTimeout(function() {
             kbdHint.classList.add("show");
-            setTimeout(function() {
-              kbdHint.classList.remove("show");
-            }, 5000);
+            setTimeout(function() { kbdHint.classList.remove("show"); }, 5000);
           }, 1500);
           sessionStorage.setItem("kbd-hint-shown", "1");
         }
@@ -197,14 +210,14 @@ const searchIndex = allPosts.map((p) => ({
         function renderResults(query) {
           if (!searchResults) return;
           if (!query.trim()) {
-            searchResults.innerHTML = '<div class="search-empty">Start typing to find articles...</div>';
+            searchResults.innerHTML = '<div class="search-empty">Type to scry for articles...</div>';
             return;
           }
           var results = searchIndex.filter(function(p) {
             return fuzzyMatch(p.title, query) || fuzzyMatch(p.description, query);
           });
           if (results.length === 0) {
-            searchResults.innerHTML = '<div class="search-empty">No articles found.</div>';
+            searchResults.innerHTML = '<div class="search-empty">No quests found in the archives...</div>';
             return;
           }
           searchResults.innerHTML = results.map(function(p) {
@@ -212,44 +225,30 @@ const searchIndex = allPosts.map((p) => ({
           }).join("");
         }
 
-        // Search trigger click — attach directly
         if (searchTrigger) {
           searchTrigger.addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openSearch();
+            e.preventDefault(); e.stopPropagation(); openSearch();
           });
         }
 
-        // Keyboard: Ctrl+K (Win) / Cmd+K (Mac) to open, Esc to close
         document.addEventListener("keydown", function(e) {
-          // Ctrl+K or Cmd+K
           if (e.key === "k" && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            e.stopPropagation();
-            openSearch();
-            return;
+            e.preventDefault(); e.stopPropagation(); openSearch(); return;
           }
-          // Esc
           if (e.key === "Escape" && isSearchOpen) {
-            e.preventDefault();
-            closeSearch();
+            e.preventDefault(); closeSearch();
           }
-          // Slash to focus search
           if (e.key === "/" && !isSearchOpen && document.activeElement === document.body) {
-            e.preventDefault();
-            openSearch();
+            e.preventDefault(); openSearch();
           }
         });
 
-        // Close on backdrop click
         if (searchOverlay) {
           searchOverlay.addEventListener("click", function(e) {
             if (e.target === searchOverlay) closeSearch();
           });
         }
 
-        // Live search
         if (searchInput) {
           searchInput.addEventListener("input", function(e) {
             renderResults(e.target.value);
@@ -284,15 +283,14 @@ const searchIndex = allPosts.map((p) => ({
         var backToTopWrap = $("backToTopWrap");
         if (backToTop && backToTopWrap) {
           window.addEventListener("scroll", function() {
-            var visible = window.scrollY > 400;
-            backToTopWrap.classList.toggle("visible", visible);
+            backToTopWrap.classList.toggle("visible", window.scrollY > 400);
           }, { passive: true });
           backToTop.addEventListener("click", function() {
             window.scrollTo({ top: 0, behavior: "smooth" });
           });
         }
 
-        // ── Code copy ──
+        // ── Code copy buttons ──
         document.querySelectorAll("pre").forEach(function(pre) {
           var wrapper = document.createElement("div");
           wrapper.className = "code-block-wrapper";
@@ -300,51 +298,20 @@ const searchIndex = allPosts.map((p) => ({
           wrapper.appendChild(pre);
 
           var btn = document.createElement("button");
-          btn.className = "copy-btn lggc";
+          btn.className = "copy-btn";
           btn.setAttribute("aria-label", "Copy code");
-          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v6.5A1.5 1.5 0 003 11h1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          btn.textContent = "CPY";
           wrapper.appendChild(btn);
 
           btn.addEventListener("click", function() {
             var code = pre.querySelector("code")?.textContent || pre.textContent || "";
             navigator.clipboard.writeText(code).then(function() {
-              btn.classList.add("copied");
-              btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+              btn.textContent = "OK!";
+              btn.style.color = "#44ee44";
               setTimeout(function() {
-                btn.classList.remove("copied");
-                btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v6.5A1.5 1.5 0 003 11h1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-              }, 2000);
-            });
-          });
-        });
-
-        // ── Progress ring ──
-        var progressRing = document.getElementById("progressRing");
-        if (progressRing) {
-          var circumference = 2 * Math.PI * 20; // r=20
-          progressRing.style.strokeDasharray = circumference;
-          function updateRing() {
-            var h = document.documentElement.scrollHeight - window.innerHeight;
-            var pct = h > 0 ? Math.min(window.scrollY / h, 1) : 0;
-            progressRing.style.strokeDashoffset = circumference - pct * circumference;
-          }
-          updateRing(); // initial call
-          window.addEventListener("scroll", updateRing, { passive: true });
-        }
-
-        // ── Ripple on buttons ──
-        document.querySelectorAll(".btn-primary, .btn-secondary, .tag-pill").forEach(function(btn) {
-          btn.addEventListener("click", function(e) {
-            var ripple = document.createElement("span");
-            ripple.className = "ripple";
-            var rect = btn.getBoundingClientRect();
-            var size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = size + "px";
-            ripple.style.left = (e.clientX - rect.left - size / 2) + "px";
-            ripple.style.top = (e.clientY - rect.top - size / 2) + "px";
-            btn.appendChild(ripple);
-            ripple.addEventListener("animationend", function() {
-              ripple.remove();
+                btn.textContent = "CPY";
+                btn.style.color = "";
+              }, 1500);
             });
           });
         });
@@ -366,3 +333,39 @@ const searchIndex = allPosts.map((p) => ({
     </script>
   </body>
 </html>
+
+<style is:global>
+  /* ── Scroll reveal with pixel bounce ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.3s steps(6), transform 0.3s steps(4);
+  }
+  .reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stagger children */
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.25s steps(5), transform 0.25s steps(4);
+  }
+  .reveal-stagger.revealed > *:nth-child(1) { transition-delay: 0s; }
+  .reveal-stagger.revealed > *:nth-child(2) { transition-delay: 0.06s; }
+  .reveal-stagger.revealed > *:nth-child(3) { transition-delay: 0.12s; }
+  .reveal-stagger.revealed > *:nth-child(4) { transition-delay: 0.18s; }
+  .reveal-stagger.revealed > *:nth-child(5) { transition-delay: 0.24s; }
+  .reveal-stagger.revealed > *:nth-child(6) { transition-delay: 0.30s; }
+  .reveal-stagger.revealed > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Selection cursor style ── */
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>

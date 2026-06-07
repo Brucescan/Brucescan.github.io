@@ -10,7 +10,7 @@
     <div class="game-over-card">
       <div class="game-over-title">Game Over</div>
       <div class="game-over-score">Score: <span id="finalScore">0</span></div>
-      <button class="game-restart-btn lggc" id="restartBtn">Play again</button>
+      <button class="game-restart-btn pixel-btn pixel-btn--primary" id="restartBtn">▶ Play again</button>
     </div>
   </div>
 </div>
@@ -580,12 +580,13 @@
     display: inline-flex;
     cursor: pointer;
     padding: var(--space-lg);
-    border-radius: var(--radius-lg);
-    transition: transform var(--transition-spring);
+    border: 3px solid var(--color-border-bright);
+    background: var(--color-surface);
+    transition: transform var(--transition-fast);
   }
 
-  .pixelcat-idle:hover { transform: translateY(-4px); }
-  .pixelcat-idle:active { transform: scale(0.95); }
+  .pixelcat-idle:hover { transform: translateY(-3px); box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
+  .pixelcat-idle:active { transform: scale(0.95); box-shadow: none; }
 
   .pixelcat-idle canvas {
     image-rendering: pixelated;
@@ -598,6 +599,7 @@
     margin-left: calc(-50vw + 50%);
     image-rendering: auto;
     cursor: pointer;
+    border: 3px solid var(--color-border-bright);
   }
 
   .game-score {
@@ -605,11 +607,12 @@
     top: 60px;
     right: 32px;
     z-index: 50;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-text-secondary);
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-pixel);
+    font-size: var(--text-sm);
+    color: var(--color-gold);
+    background: var(--color-bg-alt);
+    padding: 6px 14px;
+    border: 2px solid var(--color-border-bright);
   }
 
   .game-milestone {
@@ -617,12 +620,11 @@
     top: 50%;
     left: 50%;
     z-index: 60;
-    font-size: 3rem;
-    font-weight: 900;
-    color: #fdcb6e;
-    font-family: var(--font-mono);
+    font-family: var(--font-pixel);
+    font-size: var(--text-3xl);
+    color: #ffd700;
     pointer-events: none;
-    text-shadow: 0 2px 20px rgba(253,203,110,0.5);
+    text-shadow: 3px 3px 0 #b8960f;
   }
 
   .game-over-overlay {
@@ -632,9 +634,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: var(--color-overlay);
   }
 
   .game-over-card {
@@ -644,55 +644,24 @@
     align-items: center;
     gap: var(--space-lg);
     padding: var(--space-3xl);
-    background: rgba(255, 255, 255, 0.72);
-    border-radius: var(--radius-xl);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.12);
-  }
-
-  [data-theme="dark"] .game-over-card {
-    background: rgba(30, 30, 32, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--color-surface);
+    border: 4px solid var(--color-border-bright);
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 6px var(--color-border-dim),
+      8px 8px 0 rgba(0,0,0,0.5);
   }
 
   .game-over-title {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    color: var(--color-text);
+    font-family: var(--font-pixel);
+    font-size: var(--text-xl);
+    color: var(--color-danger);
+    text-shadow: 2px 2px 0 var(--color-danger-dim);
   }
 
   .game-over-score {
+    font-family: var(--font-mono);
     font-size: var(--text-lg);
-    color: var(--color-text-secondary);
+    color: var(--color-text-dim);
   }
-
-  .game-restart-btn {
-    --lggc-bg: rgba(0, 0, 0, 0.85);
-    --lggc-radius: 980px;
-    padding: 12px 28px;
-    font-size: var(--text-base);
-    font-weight: 600;
-    font-family: var(--font-sans);
-    cursor: pointer;
-    letter-spacing: -0.01em;
-    color: #fff;
-  }
-
-  [data-theme="dark"] .game-restart-btn {
-    --lggc-bg: rgba(255, 255, 255, 0.85);
-    color: #000;
-  }
-
-  .game-restart-btn:hover {
-    --lggc-bg: rgba(0, 0, 0, 0.95);
-    transform: translateY(-2px) scale(1.03);
-  }
-
-  [data-theme="dark"] .game-restart-btn:hover {
-    --lggc-bg: rgba(255, 255, 255, 0.95);
-  }
-
-  .game-restart-btn:active { transform: scale(0.97); }
 </style>

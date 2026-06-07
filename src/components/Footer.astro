@@ -5,7 +5,10 @@ import { site } from "../data/site";
 <footer class="footer">
   <div class="container footer-inner">
     <div class="footer-top">
-      <span class="footer-brand">{site.title}</span>
+      <div class="footer-brand">
+        <span class="footer-icon">⚔</span>
+        <span>{site.title}</span>
+      </div>
       <div class="footer-links">
         {
           site.social.github && (
@@ -15,26 +18,31 @@ import { site } from "../data/site";
           )
         }
         <a href="/" class="footer-link">Home</a>
-        <a href="/#posts" class="footer-link">Blog</a>
+        <a href="/#posts" class="footer-link">Quest Log</a>
+        <a href="/rss.xml" class="footer-link footer-link--rss">RSS Feed</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy">&copy; {new Date().getFullYear()} {site.author}. <a href="/rss.xml" class="footer-rss">RSS</a></p>
+      <p class="footer-copy">
+        &copy; {new Date().getFullYear()} {site.author}. All rights reserved.
+      </p>
+      <p class="footer-tagline">Thanks for playing!</p>
     </div>
   </div>
 </footer>
 
 <style>
   .footer {
-    padding: var(--space-3xl) 0 var(--space-xl);
-    border-top: 1px solid var(--color-border);
-    background: transparent;
+    padding: var(--space-2xl) 0 var(--space-xl);
+    border-top: 4px solid var(--color-border-bright);
+    background: var(--color-surface);
+    margin-top: var(--space-3xl);
   }
 
   .footer-inner {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xl);
+    gap: var(--space-lg);
   }
 
   .footer-top {
@@ -44,47 +52,61 @@ import { site } from "../data/site";
   }
 
   .footer-brand {
-    font-weight: 600;
-    font-size: var(--text-base);
-    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    color: var(--color-gold);
+  }
+
+  .footer-icon {
+    font-size: 1rem;
+    animation: sprite-bob 2s steps(4) infinite;
   }
 
   .footer-links {
     display: flex;
     align-items: center;
-    gap: var(--space-xl);
+    gap: var(--space-lg);
   }
 
   .footer-link {
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    color: var(--color-text-dim);
     text-decoration: none;
     transition: color var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
+  .footer-link:hover { color: var(--color-gold); }
 
-  .footer-link:hover {
-    color: var(--color-text);
+  .footer-link--rss {
+    color: var(--color-warning);
   }
+  .footer-link--rss:hover { color: var(--color-hp); }
 
   .footer-bottom {
-    padding-top: var(--space-lg);
-    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-md);
+    border-top: 2px solid var(--color-border-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .footer-copy {
-    font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
     margin: 0;
   }
 
-  .footer-rss {
-    color: var(--color-text-tertiary);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .footer-rss:hover {
-    color: var(--color-accent);
+  .footer-tagline {
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    color: var(--color-text-dim);
+    margin: 0;
   }
 
   @media (max-width: 480px) {
@@ -92,6 +114,10 @@ import { site } from "../data/site";
       flex-direction: column;
       align-items: flex-start;
       gap: var(--space-md);
+    }
+    .footer-bottom {
+      flex-direction: column;
+      gap: var(--space-xs);
     }
   }
 </style>

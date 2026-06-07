@@ -1,28 +1,15 @@
-<canvas class="ambient-glow-canvas" id="ambientGlowCanvas" aria-hidden="true"></canvas>
+<canvas class="pixel-stars-canvas" id="pixelStarsCanvas" aria-hidden="true"></canvas>
 
 <script>
   (function() {
-    var canvas = document.getElementById("ambientGlowCanvas");
+    var canvas = document.getElementById("pixelStarsCanvas");
     if (!canvas) return;
     var ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    var animId = null;
-    var halos = [];
-    var spawnTimer = 0;
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-    // Halo colors — warm golden hues for light, cool blue for dark
-    var lightColors = [
-      { r: 217, g: 119, b: 87 },    // Claude warm orange
-      { r: 212, g: 176, b: 109 },   // warm gold
-      { r: 199, g: 146, b: 117 },   // warm peach
-    ];
-    var darkColors = [
-      { r: 217, g: 119, b: 87 },    // Claude warm orange
-      { r: 212, g: 176, b: 109 },   // warm gold
-      { r: 230, g: 152, b: 125 },   // warm peach
-    ];
+    var stars = [];
+    var STAR_COUNT = 80;
 
     function resize() {
       canvas.width = window.innerWidth * dpr;
@@ -31,100 +18,52 @@
       canvas.style.height = window.innerHeight + "px";
     }
 
-    function spawnHalo() {
-      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      var colors = isDark ? darkColors : lightColors;
-      var color = colors[Math.floor(Math.random() * colors.length)];
-
-      halos.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        radius: 180 + Math.random() * 400,
-        color: color,
-        maxAlpha: 0.06 + Math.random() * 0.08,
-        alpha: 0,
-        phase: "fadeIn", // fadeIn | hold | fadeOut
-        fadeInSpeed: 0.005 + Math.random() * 0.008,
-        fadeOutSpeed: 0.003 + Math.random() * 0.005,
-        holdTime: 0,
-        holdDuration: 100 + Math.random() * 200, // frames
-        driftX: (Math.random() - 0.5) * 0.5,
-        driftY: (Math.random() - 0.5) * 0.5,
-      });
+    function createStars() {
+      stars = [];
+      for (var i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          size: (Math.random() > 0.9 ? 2 : 1) * dpr,
+          twinkle: Math.random() * Math.PI * 2,
+          speed: 0.01 + Math.random() * 0.03,
+          color: Math.random() > 0.7 ? "#ffd700" : "#e8e8ff"
+        });
+      }
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update spawn timer
-      spawnTimer++;
-      var spawnInterval = 50 + Math.random() * 130; // ~0.8-3 seconds
-      if (spawnTimer > spawnInterval && halos.length < 8) {
-        spawnTimer = 0;
-        spawnHalo();
-      }
-
-      // Draw and update each halo
-      for (var i = halos.length - 1; i >= 0; i--) {
-        var h = halos[i];
-
-        // Lifecycle
-        if (h.phase === "fadeIn") {
-          h.alpha += h.fadeInSpeed;
-          if (h.alpha >= h.maxAlpha) {
-            h.alpha = h.maxAlpha;
-            h.phase = "hold";
-          }
-        } else if (h.phase === "hold") {
-          h.holdTime++;
-          if (h.holdTime >= h.holdDuration) {
-            h.phase = "fadeOut";
-          }
-        } else if (h.phase === "fadeOut") {
-          h.alpha -= h.fadeOutSpeed;
-          if (h.alpha <= 0) {
-            halos.splice(i, 1);
-            continue;
-          }
-        }
-
-        // Drift
-        h.x += h.driftX;
-        h.y += h.driftY;
-
-        // Draw radial gradient
-        var r = h.radius * dpr;
-        var grad = ctx.createRadialGradient(
-          h.x * dpr, h.y * dpr, 0,
-          h.x * dpr, h.y * dpr, r
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        s.twinkle += s.speed;
+        var alpha = 0.3 + Math.sin(s.twinkle) * 0.4;
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(
+          Math.round(s.x * dpr / s.size) * s.size,
+          Math.round(s.y * dpr / s.size) * s.size,
+          s.size, s.size
         );
-        var c = h.color;
-        grad.addColorStop(0, "rgba(" + c.r + "," + c.g + "," + c.b + "," + h.alpha + ")");
-        grad.addColorStop(0.4, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (h.alpha * 0.6) + ")");
-        grad.addColorStop(1, "rgba(" + c.r + "," + c.g + "," + c.b + ",0)");
-
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-
-      // Ensure minimum halos
-      if (halos.length === 0) {
-        spawnHalo();
-        spawnHalo();
-      }
-
-      animId = requestAnimationFrame(draw);
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(draw);
     }
 
     resize();
+    createStars();
     draw();
 
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", function() {
+      resize();
+      createStars();
+    });
   })();
 </script>
 
 <style>
-  .ambient-glow-canvas {
+  .pixel-stars-canvas {
     position: fixed;
     inset: 0;
     z-index: 0;

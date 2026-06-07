@@ -10,56 +10,111 @@ const { postCount = 0, tagCount = 0 } = Astro.props;
 ---
 
 <section class="hero">
-  <!-- Parallax blobs -->
-  <div class="hero-blobs" id="heroBlobs" aria-hidden="true">
-    <div class="hero-blob-wrapper" data-depth="0.18">
-      <div class="hero-blob"></div>
-    </div>
-    <div class="hero-blob-wrapper" data-depth="0.10">
-      <div class="hero-blob"></div>
-    </div>
-    <div class="hero-blob-wrapper" data-depth="0.06">
-      <div class="hero-blob"></div>
-    </div>
-  </div>
-
   <div class="container hero-content">
-    <div class="hero-avatar-wrapper reveal">
-      <div class="hero-avatar">
+    <!-- Character portrait frame -->
+    <div class="hero-portrait-wrap reveal">
+      <div class="hero-portrait">
         <img src="/images/avatar.jpg" alt={site.author} width="80" height="80" />
       </div>
     </div>
-    <h1 class="hero-title reveal">Flazi</h1>
-    <p class="hero-tagline reveal">{site.description}</p>
-    <div class="hero-stats reveal">
-      <span class="hero-stat"><strong id="statPosts">{postCount}</strong> articles</span>
-      <span class="hero-stat-dot">·</span>
-      <span class="hero-stat"><strong id="statTags">{tagCount}</strong> tags</span>
+
+    <!-- Name + title -->
+    <div class="hero-info reveal">
+      <h1 class="hero-name">{site.author}</h1>
+      <p class="hero-class">Code Wizard Lv.99</p>
     </div>
+
+    <!-- Stat bars -->
+    <div class="hero-stats reveal">
+      <div class="stat-bar">
+        <span class="stat-label">HP</span>
+        <div class="stat-bar__track">
+          <div class="stat-bar__fill stat-bar__fill--hp" style="width:100%"></div>
+        </div>
+        <span class="stat-value">999 / 999</span>
+      </div>
+      <div class="stat-bar">
+        <span class="stat-label">MP</span>
+        <div class="stat-bar__track">
+          <div class="stat-bar__fill stat-bar__fill--mp" style="width:75%"></div>
+        </div>
+        <span class="stat-value">750 / 999</span>
+      </div>
+      <div class="stat-bar">
+        <span class="stat-label">EXP</span>
+        <div class="stat-bar__track">
+          <div class="stat-bar__fill stat-bar__fill--xp" style="width:45%"></div>
+        </div>
+        <span class="stat-value">4500 / 9999</span>
+      </div>
+    </div>
+
+    <!-- Stats line -->
+    <div class="hero-meta reveal">
+      <span class="hero-meta-item">
+        <span class="meta-icon">📜</span>
+        <strong id="statPosts">{postCount}</strong> quests completed
+      </span>
+      <span class="hero-meta-dot"></span>
+      <span class="hero-meta-item">
+        <span class="meta-icon">🏷</span>
+        <strong id="statTags">{tagCount}</strong> spell schools
+      </span>
+    </div>
+
+    <!-- Actions -->
     <div class="hero-actions reveal">
-      <a href="#posts" class="btn btn-primary lggc">Read the blog</a>
+      <a href="#posts" class="pixel-btn pixel-btn--primary">
+        ▶ Read the Quest Log
+      </a>
       {
         site.social.github && (
-          <a href={site.social.github} class="btn btn-secondary lggc" target="_blank" rel="noopener noreferrer">
-            GitHub
+          <a href={site.social.github} class="pixel-btn" target="_blank" rel="noopener noreferrer">
+            ⚔ GitHub
           </a>
         )
       }
     </div>
   </div>
 
-  <!-- Scroll-down indicator -->
-  <div class="scroll-indicator" id="scrollIndicator" aria-hidden="true">
-    <span class="scroll-indicator-line"></span>
+  <!-- Pixel floor -->
+  <div class="hero-floor" aria-hidden="true">
+    <div class="hero-floor-line"></div>
   </div>
 </section>
 
+<script>
+  (function() {
+    // Animated count-up for stats
+    var statPosts = document.getElementById("statPosts");
+    var statTags = document.getElementById("statTags");
+    if (statPosts || statTags) {
+      function animateCount(el, target, duration) {
+        if (!el) return;
+        var start = 0;
+        var startTime = performance.now();
+        function step(now) {
+          var progress = Math.min((now - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.floor(eased * target);
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = target;
+        }
+        requestAnimationFrame(step);
+      }
+      setTimeout(function() {
+        animateCount(statPosts, parseInt(statPosts.textContent) || 0, 800);
+        animateCount(statTags, parseInt(statTags.textContent) || 0, 1000);
+      }, 600);
+    }
+  })();
+</script>
+
 <style>
   .hero {
-    padding: var(--space-4xl) 0 var(--space-3xl);
+    padding: var(--space-3xl) 0 var(--space-2xl);
     text-align: center;
     position: relative;
-    overflow: hidden;
   }
 
   .hero-content {
@@ -71,289 +126,174 @@ const { postCount = 0, tagCount = 0 } = Astro.props;
     z-index: 1;
   }
 
-  .hero-avatar-wrapper {
-    margin-bottom: var(--space-md);
+  /* ── Portrait ── */
+  .hero-portrait-wrap {
+    margin-bottom: var(--space-sm);
   }
 
-  .hero-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
+  .hero-portrait {
+    width: 88px; height: 88px;
     position: relative;
   }
 
-  /* Glass ring behind avatar */
-  .hero-avatar::before {
-    content: "";
+  /* Pixel frame around avatar */
+  .hero-portrait::before {
+    content: '';
     position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow:
-      0 0 0 4px rgba(255, 255, 255, 0.1),
-      0 2px 16px rgba(0, 0, 0, 0.06);
+    inset: -6px;
+    background: var(--color-border);
+    clip-path: polygon(
+      0px 4px, 4px 4px, 4px 0px, calc(100% - 4px) 0px,
+      calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+      4px 100%, 4px calc(100% - 4px), 0px calc(100% - 4px)
+    );
     z-index: 0;
   }
 
-  [data-theme="dark"] .hero-avatar::before {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow:
-      0 0 0 4px rgba(255, 255, 255, 0.04),
-      0 2px 16px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Spinning accent glow */
-  .hero-avatar::after {
-    content: "";
-    position: absolute;
-    inset: -5px;
-    border-radius: 50%;
-    background: conic-gradient(from 0deg, var(--color-accent), transparent 35%, transparent 65%, var(--color-accent));
-    opacity: 0.2;
-    animation: avatarSpin 4s linear infinite;
-    z-index: 0;
-  }
-
-  [data-theme="dark"] .hero-avatar::after {
-    opacity: 0.3;
-  }
-
-  @keyframes avatarSpin {
-    to { transform: rotate(360deg); }
-  }
-
-  .hero-avatar img {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: block;
+  .hero-portrait img {
+    width: 80px; height: 80px;
     position: relative;
     z-index: 1;
-    transition: transform var(--transition-spring);
-    object-fit: cover;
+    image-rendering: pixelated;
+    border: 3px solid var(--color-border-bright);
   }
 
-  .hero-avatar:hover img {
-    transform: scale(1.06);
+  .hero-portrait:hover img {
+    animation: sprite-pulse 0.3s steps(3) 1;
   }
 
-  .hero-title {
-    font-size: var(--text-4xl);
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 1.1;
-    background: linear-gradient(
-      135deg,
-      var(--color-text) 0%,
-      var(--color-hero-gradient-end) 40%,
-      var(--color-accent) 50%,
-      var(--color-hero-gradient-end) 60%,
-      var(--color-text) 100%
-    );
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: titleShimmer 6s ease-in-out infinite;
-  }
-
-  @keyframes titleShimmer {
-    0%, 100% { background-position: 0% center; }
-    50% { background-position: 200% center; }
-  }
-
-  .hero-tagline {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-    font-weight: 400;
-    line-height: 1.5;
-    max-width: 480px;
-    letter-spacing: -0.01em;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: var(--space-md);
-    margin-top: var(--space-lg);
-  }
-
-  /* Minimal btn — lggc handles padding, radius, border, and transitions */
-  .btn {
-    font-size: var(--text-base);
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    letter-spacing: -0.01em;
-  }
-
-  .btn-primary {
-    --lggc-padding: 12px 28px;
-    --lggc-bg: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    font-weight: 600;
-  }
-
-  .btn-primary:hover {
-    --lggc-bg: rgba(0, 0, 0, 0.92);
-    color: #fff;
-  }
-
-  [data-theme="dark"] .btn-primary {
-    --lggc-bg: rgba(255, 255, 255, 0.9);
-    color: #000;
-  }
-
-  [data-theme="dark"] .btn-primary:hover {
-    --lggc-bg: rgba(255, 255, 255, 0.95);
-    color: #000;
-  }
-
-  .btn-secondary {
-    --lggc-padding: 12px 28px;
-    --lggc-bg: rgba(255, 255, 255, 0.6);
-    color: var(--color-text);
-    font-weight: 500;
-  }
-
-  .btn-secondary:hover {
-    --lggc-bg: rgba(255, 255, 255, 0.75);
-  }
-
-  [data-theme="dark"] .btn-secondary {
-    --lggc-bg: rgba(255, 255, 255, 0.1);
-  }
-
-  [data-theme="dark"] .btn-secondary:hover {
-    --lggc-bg: rgba(255, 255, 255, 0.16);
-  }
-
-  /* Hero stats */
-  .hero-stats {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
-  }
-
-  .hero-stat strong {
-    color: var(--color-text);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .hero-stat-dot {
-    color: var(--color-text-tertiary);
-  }
-
-  /* Scroll-down indicator */
-  .scroll-indicator {
-    position: absolute;
-    bottom: var(--space-xl);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
+  /* ── Name & class ── */
+  .hero-info {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    opacity: 1;
-    transition: opacity 0.3s ease;
+    gap: var(--space-xs);
   }
 
-  .scroll-indicator.hidden {
-    opacity: 0;
-    pointer-events: none;
+  .hero-name {
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    text-shadow:
+      3px 3px 0 var(--color-gold-dim),
+      0 0 12px rgba(255,215,0,0.2);
+    letter-spacing: 0.08em;
   }
 
-  .scroll-indicator-line {
-    display: block;
-    width: 1px;
-    height: 32px;
-    background: linear-gradient(to bottom, var(--color-text-tertiary), transparent);
-    animation: scrollPulse 2s ease-in-out infinite;
+  .hero-class {
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    color: var(--color-mp);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 6px rgba(68,153,255,0.3);
   }
 
-  .scroll-indicator::after {
-    content: "";
-    display: block;
-    width: 6px;
-    height: 6px;
-    border-right: 1.5px solid var(--color-text-tertiary);
-    border-bottom: 1.5px solid var(--color-text-tertiary);
-    transform: rotate(45deg);
-    animation: scrollChevron 2s ease-in-out infinite;
+  /* ── Stat bars ── */
+  .hero-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    width: 100%;
+    max-width: 420px;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-bg-alt);
+    border: 3px solid var(--color-border-dim);
   }
 
-  @keyframes scrollPulse {
-    0%, 100% { opacity: 0.3; transform: scaleY(1); }
-    50% { opacity: 1; transform: scaleY(1.1); }
+  .stat-label {
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .stat-label { color: var(--color-hp); }
+  .stat-bar:nth-child(2) .stat-label { color: var(--color-mp); }
+  .stat-bar:nth-child(3) .stat-label { color: var(--color-xp); }
+
+  .stat-value {
+    font-family: var(--font-pixel);
+    font-size: 0.45rem;
+    color: var(--color-text-dim);
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
   }
 
-  @keyframes scrollChevron {
-    0%, 100% { opacity: 0.3; transform: rotate(45deg) translateY(0); }
-    50% { opacity: 1; transform: rotate(45deg) translateY(4px); }
+  /* ── Meta ── */
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-pixel);
+    font-size: var(--text-2xs);
+    color: var(--color-text-dim);
+  }
+
+  .hero-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .meta-icon { font-size: 0.7rem; }
+
+  .hero-meta-item strong {
+    color: var(--color-gold);
+  }
+
+  .hero-meta-dot {
+    width: 3px; height: 3px;
+    background: var(--color-border);
+  }
+
+  /* ── Actions ── */
+  .hero-actions {
+    display: flex;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ── Floor ── */
+  .hero-floor {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 20px;
+    overflow: hidden;
+  }
+
+  .hero-floor-line {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--color-border-bright);
+    box-shadow: 0 -4px 0 var(--color-border-dim);
+  }
+
+  .hero-floor-line::after {
+    content: '';
+    position: absolute;
+    bottom: 4px; left: 10%;
+    width: 80%;
+    height: 2px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--color-gold-dim) 0px,
+      var(--color-gold-dim) 20px,
+      transparent 20px,
+      transparent 24px
+    );
+  }
+
+  @media (max-width: 768px) {
+    .hero-stats {
+      max-width: 100%;
+    }
+    .hero-name {
+      font-size: var(--text-xl);
+    }
   }
 </style>
-
-<script>
-  (function() {
-    // Parallax blobs
-    var hero = document.querySelector(".hero");
-    var wrappers = document.querySelectorAll(".hero-blob-wrapper");
-    if (hero && wrappers.length > 0) {
-      var maxOffset = 50;
-      hero.addEventListener("mousemove", function(e) {
-        var rect = hero.getBoundingClientRect();
-        var x = (e.clientX - rect.left) / rect.width - 0.5;
-        var y = (e.clientY - rect.top) / rect.height - 0.5;
-        wrappers.forEach(function(w) {
-          var depth = parseFloat(w.getAttribute("data-depth")) || 0.1;
-          w.style.transition = "none";
-          w.style.transform = "translate(" + (x * maxOffset * depth * 2) + "px, " + (y * maxOffset * depth * 2) + "px)";
-        });
-      });
-      hero.addEventListener("mouseleave", function() {
-        wrappers.forEach(function(w) {
-          w.style.transition = "";
-          w.style.transform = "";
-        });
-      });
-    }
-
-    // Scroll indicator fade
-    var indicator = document.getElementById("scrollIndicator");
-    if (indicator) {
-      window.addEventListener("scroll", function() {
-        indicator.classList.toggle("hidden", window.scrollY > 100);
-      }, { passive: true });
-    }
-
-    // Animated count-up for stats
-    var statPosts = document.getElementById("statPosts");
-    var statTags = document.getElementById("statTags");
-    if (statPosts || statTags) {
-      function animateCount(el, target, duration) {
-        if (!el) return;
-        var start = 0;
-        var startTime = performance.now();
-        function step(now) {
-          var progress = Math.min((now - startTime) / duration, 1);
-          // Ease-out cubic
-          var eased = 1 - Math.pow(1 - progress, 3);
-          el.textContent = Math.floor(eased * target);
-          if (progress < 1) requestAnimationFrame(step);
-          else el.textContent = target;
-        }
-        requestAnimationFrame(step);
-      }
-      // Delay until reveal animation completes (~700ms)
-      setTimeout(function() {
-        animateCount(statPosts, parseInt(statPosts.textContent) || 0, 1000);
-        animateCount(statTags, parseInt(statTags.textContent) || 0, 1200);
-      }, 800);
-    }
-  })();
-</script>
