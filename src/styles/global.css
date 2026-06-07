@@ -273,6 +273,113 @@ img{max-width:100%;height:auto}
 .search-empty{padding:32px 16px;text-align:center;color:var(--text-muted);font-size:var(--text-sm)}
 
 /* ═══════════════════════════════════
+   READING PROGRESS BAR
+   ═══════════════════════════════════ */
+.reading-progress{
+  position:fixed;top:0;left:0;height:2px;
+  background:var(--star-gold);
+  box-shadow:0 0 6px var(--star-glow);
+  z-index:200;transition:width 0.1s linear;
+  width:0;
+}
+
+/* ═══════════════════════════════════
+   BACK TO TOP
+   ═══════════════════════════════════ */
+.back-to-top{
+  position:fixed;bottom:32px;right:32px;z-index:50;
+  width:40px;height:40px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--star-gold);font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;transform:translateY(12px);
+  pointer-events:none;
+  transition:opacity 0.3s,transform 0.3s,box-shadow 0.3s;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.back-to-top.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.back-to-top:hover{box-shadow:0 0 16px var(--star-glow);border-color:var(--star-gold)}
+
+/* ═══════════════════════════════════
+   TOC SIDEBAR
+   ═══════════════════════════════════ */
+.post-with-toc{display:grid;grid-template-columns:1fr 200px;gap:40px;align-items:start}
+.toc-sidebar{
+  position:sticky;top:calc(var(--header-h) + 24px);
+  max-height:calc(100vh - var(--header-h) - 48px);
+  overflow-y:auto;
+}
+.toc-title{
+  font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.08em;
+  color:var(--star-gold);margin-bottom:12px;text-transform:uppercase;
+}
+.toc-list{list-style:none;padding:0;margin:0;border-left:1px solid var(--border)}
+.toc-item{padding:0;margin:0}
+.toc-link{
+  display:block;padding:3px 0 3px 12px;
+  font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);
+  text-decoration:none;border-left:2px solid transparent;margin-left:-1px;
+  transition:all 0.2s;line-height:1.4;
+}
+.toc-link:hover{color:var(--star-gold)}
+.toc-link.active{color:var(--star-gold);border-left-color:var(--star-gold)}
+.toc-link--h3{padding-left:20px}
+@media(max-width:900px){.post-with-toc{grid-template-columns:1fr}.toc-sidebar{display:none}}
+
+/* ═══════════════════════════════════
+   CODE COPY BUTTON
+   ═══════════════════════════════════ */
+.code-block-wrap{position:relative;margin:16px 0}
+.code-block-wrap pre{margin:0}
+.copy-btn{
+  position:absolute;top:8px;right:8px;
+  padding:4px 10px;
+  font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  cursor:pointer;opacity:0;transition:opacity 0.2s,color 0.2s,border-color 0.2s;
+}
+.code-block-wrap:hover .copy-btn{opacity:1}
+.copy-btn:hover{color:var(--star-gold);border-color:var(--star-gold)}
+.copy-btn.copied{color:#44dd88;border-color:#44dd88}
+
+/* ═══════════════════════════════════
+   KEYBOARD SHORTCUTS PANEL
+   ═══════════════════════════════════ */
+.kbd-panel-overlay{
+  position:fixed;inset:0;z-index:600;background:rgba(3,3,16,0.8);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+}
+.kbd-panel-overlay.open{display:flex}
+.kbd-panel{
+  width:380px;max-width:90vw;background:var(--void-deep);
+  border:1px solid var(--border);border-radius:8px;padding:24px;
+  box-shadow:0 0 40px rgba(0,0,0,0.5);
+}
+.kbd-panel-title{
+  font-family:var(--font-display);font-size:var(--text-sm);color:var(--star-gold);
+  letter-spacing:0.06em;margin-bottom:16px;text-align:center;
+}
+.kbd-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:var(--text-xs);
+}
+.kbd-row:last-child{border-bottom:none}
+.kbd-label{color:var(--text-dim)}
+.kbd-keys{display:flex;gap:4px;align-items:center}
+.kbd-key{
+  font-family:var(--font-mono);font-size:var(--text-2xs);
+  color:var(--text-dim);background:var(--surface);border:1px solid var(--border);
+  padding:2px 7px;border-radius:4px;
+}
+.kbd-close{
+  display:block;margin:16px auto 0;font-family:var(--font-mono);font-size:var(--text-2xs);
+  color:var(--text-muted);background:none;border:none;cursor:pointer;
+}
+.kbd-close:hover{color:var(--star-gold)}
+
+/* ═══════════════════════════════════
    MOBILE NAV
    ═══════════════════════════════════ */
 .hamburger{display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer}

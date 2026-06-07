@@ -72,8 +72,27 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
     </div>
   </header>
 
+  <!-- Reading progress bar -->
+  <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
+
   <!-- Page Content -->
   <slot />
+
+  <!-- Back to top -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top" title="Back to top">↑</button>
+
+  <!-- Keyboard shortcuts panel -->
+  <div class="kbd-panel-overlay" id="kbdPanel">
+    <div class="kbd-panel">
+      <div class="kbd-panel-title">⌨ Shortcuts</div>
+      <div class="kbd-row"><span class="kbd-label">Search</span><span class="kbd-keys"><kbd class="kbd-key">Ctrl</kbd>+<kbd class="kbd-key">K</kbd></span></div>
+      <div class="kbd-row"><span class="kbd-label">Quick search</span><span class="kbd-keys"><kbd class="kbd-key">/</kbd></span></div>
+      <div class="kbd-row"><span class="kbd-label">Toggle theme</span><span class="kbd-keys"><kbd class="kbd-key">Ctrl</kbd>+<kbd class="kbd-key">T</kbd></span></div>
+      <div class="kbd-row"><span class="kbd-label">Go home</span><span class="kbd-keys"><kbd class="kbd-key">Ctrl</kbd>+<kbd class="kbd-key">H</kbd></span></div>
+      <div class="kbd-row"><span class="kbd-label">Show shortcuts</span><span class="kbd-keys"><kbd class="kbd-key">?</kbd></span></div>
+      <button class="kbd-close" id="kbdClose">Press ESC or click to close</button>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="cosmic-footer">
@@ -182,8 +201,34 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       var ham=document.getElementById('hamburger'),nav=document.getElementById('cosmicNav');
       if(ham&&nav){ham.addEventListener('click',function(){nav.classList.toggle('open')})}
 
-      // ── Search ──
-      var overlay=document.getElementById('searchOverlay'),input=document.getElementById('searchInput'),results=document.getElementById('searchResults');
+      // ── Reading progress ──
+      var prog=document.getElementById('readingProgress');
+      if(prog){window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;prog.style.width=h>0?Math.min(window.scrollY/h*100,100)+'%':'0'},{passive:true})}
+
+      // ── Back to top ──
+      var btt=document.getElementById('backToTop');
+      if(btt){window.addEventListener('scroll',function(){btt.classList.toggle('visible',window.scrollY>400)},{passive:true});btt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})})}
+
+      // ── Code copy buttons ──
+      document.querySelectorAll('pre').forEach(function(pre){var wrap=document.createElement('div');wrap.className='code-block-wrap';pre.parentNode.insertBefore(wrap,pre);wrap.appendChild(pre);var btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';wrap.appendChild(btn);btn.addEventListener('click',function(){var code=pre.querySelector('code')?.textContent||pre.textContent||'';navigator.clipboard.writeText(code).then(function(){btn.textContent='Copied!';btn.classList.add('copied');setTimeout(function(){btn.textContent='Copy';btn.classList.remove('copied')},2000)})})});
+
+      // ── Keyboard shortcuts panel ──
+      var kbdPanel=document.getElementById('kbdPanel'),kbdClose=document.getElementById('kbdClose');
+      function openKbd(){kbdPanel.classList.add('open');document.body.style.overflow='hidden'}
+      function closeKbd(){kbdPanel.classList.remove('open');document.body.style.overflow=''}
+      if(kbdPanel){kbdPanel.addEventListener('click',function(e){if(e.target===kbdPanel)closeKbd()});kbdClose.addEventListener('click',closeKbd)}
+
+      // ── Global keyboard shortcuts ──
+      document.addEventListener('keydown',function(e){
+        var tag=e.target.tagName;
+        if(tag==='INPUT'||tag==='TEXTAREA')return;
+        if(e.key==='Escape'){closeSearch();closeKbd()}
+        if(e.key==='k'&&(e.ctrlKey||e.metaKey)){e.preventDefault();openSearch()}
+        if(e.key==='/'&&document.activeElement===document.body){e.preventDefault();openSearch()}
+        if(e.key==='t'&&(e.ctrlKey||e.metaKey)){e.preventDefault();document.getElementById('themeBtn')?.click()}
+        if(e.key==='h'&&(e.ctrlKey||e.metaKey)){e.preventDefault();window.location.href='/'}
+        if(e.key==='?'){e.preventDefault();openKbd()}
+      });
       function openSearch(){overlay.classList.add('open');input.value='';input.focus();renderResults('');document.body.style.overflow='hidden'}
       function closeSearch(){overlay.classList.remove('open');document.body.style.overflow=''}
       function renderResults(q){

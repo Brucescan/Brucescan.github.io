@@ -57,9 +57,15 @@ const related = allPosts
       </div>
     </header>
 
-    <!-- Content -->
-    <div class="article-content">
-      <Content />
+    <!-- Content with TOC sidebar -->
+    <div class="post-with-toc">
+      <div class="article-content" id="articleContent">
+        <Content />
+      </div>
+      <aside class="toc-sidebar" id="tocSidebar">
+        <div class="toc-title">📜 On This Page</div>
+        <ul class="toc-list" id="tocList"></ul>
+      </aside>
     </div>
 
     <!-- Post navigation -->
@@ -95,6 +101,28 @@ const related = allPosts
       </div>
     )}
   </article>
+
+  <!-- TOC generation -->
+  <script>
+    (function(){
+      var content=document.getElementById('articleContent'),tocList=document.getElementById('tocList'),sidebar=document.getElementById('tocSidebar');
+      if(!content||!tocList||!sidebar)return;
+      var headings=content.querySelectorAll('h2,h3');
+      if(headings.length<2){sidebar.style.display='none';return}
+      var items=[];
+      headings.forEach(function(h,i){
+        var id='h-'+i;h.id=id;
+        var li=document.createElement('li');li.className='toc-item';
+        var a=document.createElement('a');a.className='toc-link'+(h.tagName==='H3'?' toc-link--h3':'');
+        a.href='#'+id;a.textContent=h.textContent;
+        a.addEventListener('click',function(e){e.preventDefault();h.scrollIntoView({behavior:'smooth',block:'start'});history.pushState(null,'','#'+id)});
+        li.appendChild(a);tocList.appendChild(li);items.push({el:a,id:id});
+      });
+      // Highlight on scroll
+      var observer=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){items.forEach(function(it){it.el.classList.remove('active')});var found=items.find(function(it){return it.id===e.target.id});if(found)found.el.classList.add('active')}})},{rootMargin:'-80px 0px -70% 0px',threshold:0});
+      headings.forEach(function(h){observer.observe(h)});
+    })();
+  </script>
 
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context":"https://schema.org","@type":"BlogPosting",
