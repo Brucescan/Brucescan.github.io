@@ -314,11 +314,13 @@ const deepSpaceObjects = Array.from({length: deepSpaceCount}, (_, i) => {
 
     // ── Core click easter egg ──
     var coreClickCount=0,coreClickTimer=null;
+    var coreGlow=document.querySelector('.core-glow');
     var coreBody=document.querySelector('.core-body');
-    if(coreBody){
-      coreBody.style.pointerEvents='auto';
-      coreBody.style.cursor='pointer';
-      coreBody.addEventListener('click',function(){
+    var coreTarget=coreGlow||coreBody;
+    if(coreTarget){
+      coreTarget.style.pointerEvents='auto';
+      coreTarget.style.cursor='pointer';
+      coreTarget.addEventListener('click',function(){
         coreClickCount++;
         if(coreClickTimer)clearTimeout(coreClickTimer);
         coreClickTimer=setTimeout(function(){coreClickCount=0},1500);
