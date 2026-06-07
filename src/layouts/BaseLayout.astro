@@ -48,11 +48,8 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
 <body>
   <!-- Cosmic Background -->
   <div class="cosmic-bg" aria-hidden="true"></div>
-  <div class="shooting-star" aria-hidden="true"></div>
-  <div class="shooting-star" aria-hidden="true"></div>
-  <div class="shooting-star" aria-hidden="true"></div>
-  <div class="shooting-star" aria-hidden="true"></div>
-  <div class="shooting-star" aria-hidden="true"></div>
+  <!-- Meteor canvas -->
+  <canvas id="meteorCanvas" aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:1"></canvas>
 
   <!-- Header -->
   <header class="cosmic-header">
@@ -106,6 +103,48 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
 
   <script>
     (function(){
+      // ── Meteor Shower ──
+      (function(){
+        var c=document.getElementById('meteorCanvas');if(!c)return;
+        var ctx=c.getContext('2d');if(!ctx)return;
+        var meteors=[];
+        function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+        resize();window.addEventListener('resize',resize);
+
+        function spawn(){
+          meteors.push({
+            x:Math.random()*c.width*0.7+c.width*0.3,
+            y:Math.random()*c.height*0.3,
+            vx:-(2+Math.random()*3),
+            vy:1.5+Math.random()*2.5,
+            life:1,decay:0.006+Math.random()*0.012,
+            len:60+Math.random()*100
+          });
+        }
+
+        function draw(){
+          ctx.clearRect(0,0,c.width,c.height);
+          for(var i=meteors.length-1;i>=0;i--){
+            var m=meteors[i];m.life-=m.decay;
+            if(m.life<=0){meteors.splice(i,1);continue}
+            m.x+=m.vx;m.y+=m.vy;
+            var tx=m.x-m.vx*m.len*0.03,ty=m.y-m.vy*m.len*0.03;
+            var grad=ctx.createLinearGradient(tx,ty,m.x,m.y);
+            grad.addColorStop(0,'rgba(255,255,255,0)');
+            grad.addColorStop(0.6,'rgba(255,240,220,'+(m.life*0.5)+')');
+            grad.addColorStop(1,'rgba(255,255,255,'+m.life+')');
+            ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.lineCap='round';
+            ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(m.x,m.y);ctx.stroke();
+            // Glow at head
+            ctx.fillStyle='rgba(255,255,255,'+(m.life*0.8)+')';
+            ctx.beginPath();ctx.arc(m.x,m.y,1.5,0,Math.PI*2);ctx.fill();
+          }
+          if(meteors.length<2&&Math.random()<0.02)spawn();
+          requestAnimationFrame(draw);
+        }
+        spawn();spawn();draw();
+      })();
+
       // ── Search Data ──
       var sIdx=[];
       try{var rd=document.getElementById('searchData')?.textContent;if(rd)sIdx=JSON.parse(rd)}catch(e){}
