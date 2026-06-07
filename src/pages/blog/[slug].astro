@@ -66,7 +66,10 @@ const related = publishedPosts
 
     <!-- Header -->
     <header style="margin:24px 0 32px">
-      <h1 class="article-content" style="margin:0 0 8px">{post.data.title}</h1>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <h1 class="article-content" style="margin:0">{post.data.title}</h1>
+        <button class="share-btn" id="shareBtn" title="Share this article" aria-label="Share">🔗 Share</button>
+      </div>
       <div class="article-meta">
         <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
         <span class="reading-time">~{readingMinutes} min read</span>
@@ -154,6 +157,22 @@ const related = publishedPosts
     )}
   </article>
 
+  <!-- Share button -->
+  <script>
+    (function(){
+      var shareBtn=document.getElementById('shareBtn');
+      if(shareBtn){
+        shareBtn.addEventListener('click',function(){
+          navigator.clipboard.writeText(window.location.href).then(function(){
+            shareBtn.textContent='✓ Link Copied!';
+            shareBtn.classList.add('shared');
+            setTimeout(function(){shareBtn.textContent='🔗 Share';shareBtn.classList.remove('shared')},2000);
+          });
+        });
+      }
+    })();
+  </script>
+
   <!-- TOC generation -->
   <script>
     (function(){
@@ -164,6 +183,22 @@ const related = publishedPosts
       var items=[];
       headings.forEach(function(h,i){
         var id='h-'+i;h.id=id;
+        // Add anchor link on hover
+        var anchor=document.createElement('a');
+        anchor.className='heading-anchor';anchor.href='#'+id;
+        anchor.innerHTML='#';
+        anchor.title='Copy link to this section';
+        anchor.addEventListener('click',function(e){
+          e.preventDefault();
+          var url=window.location.origin+window.location.pathname+'#'+id;
+          navigator.clipboard.writeText(url).then(function(){
+            anchor.classList.add('anchor-copied');
+            anchor.textContent='✓';
+            setTimeout(function(){anchor.classList.remove('anchor-copied');anchor.textContent='#'},1500);
+          });
+        });
+        h.appendChild(anchor);
+
         var li=document.createElement('li');li.className='toc-item';
         var a=document.createElement('a');a.className='toc-link'+(h.tagName==='H3'?' toc-link--h3':'');
         a.href='#'+id;a.textContent=h.textContent;

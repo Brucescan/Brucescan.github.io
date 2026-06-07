@@ -56,6 +56,17 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
   <meta name="twitter:title" content={pageTitle}><meta name="twitter:description" content={pageDesc}>
   <meta name="twitter:image" content={ogImg}>
   <script is:inline>(function(){var s=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",s||"dark")})()</script>
+  <!-- Console Easter Egg -->
+  <script is:inline>
+    console.log(
+      '%c✦ %cTHE COSMIC CODEX %c✦',
+      'color:#ffd875;font-size:24px;',
+      'color:#ffd875;font-family:serif;font-size:24px;font-weight:bold;',
+      'color:#ffd875;font-size:24px;'
+    );
+    console.log('%cYou seem curious about the stars. Welcome, traveler.%c', 'color:#c8c0b0;font-size:14px;', '');
+    console.log('%cTry the Konami Code: ↑↑↓↓←→←→BA', 'color:#908878;font-size:11px;font-style:italic;');
+  </script>
 </head>
 <body>
   <!-- Cosmic Background -->
@@ -101,9 +112,11 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       <div class="kbd-panel-title">⌨ Shortcuts</div>
       <div class="kbd-row"><span class="kbd-label">Search</span><span class="kbd-keys"><kbd class="kbd-key">Ctrl</kbd>+<kbd class="kbd-key">K</kbd></span></div>
       <div class="kbd-row"><span class="kbd-label">Quick search</span><span class="kbd-keys"><kbd class="kbd-key">/</kbd></span></div>
+      <div class="kbd-row"><span class="kbd-label">Nav results</span><span class="kbd-keys"><kbd class="kbd-key">↑</kbd><kbd class="kbd-key">↓</kbd></span></div>
       <div class="kbd-row"><span class="kbd-label">Toggle theme</span><span class="kbd-keys"><kbd class="kbd-key">Ctrl</kbd>+<kbd class="kbd-key">T</kbd></span></div>
       <div class="kbd-row"><span class="kbd-label">Go home</span><span class="kbd-keys"><kbd class="kbd-key">Ctrl</kbd>+<kbd class="kbd-key">H</kbd></span></div>
       <div class="kbd-row"><span class="kbd-label">Show shortcuts</span><span class="kbd-keys"><kbd class="kbd-key">?</kbd></span></div>
+      <div class="kbd-row"><span class="kbd-label">Secret code</span><span class="kbd-keys"><kbd class="kbd-key">↑↑↓↓←→←→BA</kbd></span></div>
       <button class="kbd-close" id="kbdClose">Press ESC or click to close</button>
     </div>
   </div>
@@ -129,6 +142,10 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       <div class="search-results" id="searchResults">
         <div class="search-empty">Type to discover stars...</div>
       </div>
+      <div class="search-recent" id="searchRecent" style="display:none">
+        <div class="search-recent-title">Recent explorations</div>
+        <div class="search-recent-chips" id="searchRecentChips"></div>
+      </div>
     </div>
   </div>
 
@@ -141,8 +158,17 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
     <div class="lightbox-counter" id="lightboxCounter"></div>
   </div>
 
+  <!-- Toast notification -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
   <!-- Immersive exit -->
   <button class="immersive-exit" id="immersiveExit" title="Exit immersive mode">✕ Exit Immersion</button>
+
+  <!-- Supernova overlay -->
+  <div class="supernova-overlay" id="supernovaOverlay" aria-hidden="true">
+    <div class="supernova-text">✦ SUPERNOVA ✦</div>
+    <div class="supernova-particles" id="supernovaParticles"></div>
+  </div>
 
   <script type="application/json" id="searchData" set:html={JSON.stringify(searchData)}></script>
 
@@ -152,14 +178,55 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
       var sIdx=[];
       try{var rd=document.getElementById('searchData')?.textContent;if(rd)sIdx=JSON.parse(rd)}catch(e){}
 
+      // ── Toast notification ──
+      var toastTimer=null;
+      function showToast(msg,icon){
+        var container=document.getElementById('toastContainer');if(!container)return;
+        var toast=document.createElement('div');toast.className='toast';
+        toast.innerHTML=(icon||'✦')+' '+msg;
+        container.appendChild(toast);
+        requestAnimationFrame(function(){toast.classList.add('show')});
+        setTimeout(function(){toast.classList.remove('show');setTimeout(function(){if(toast.parentNode)toast.parentNode.removeChild(toast)},300)},2200);
+      }
+
+      // ── Konami Code ──
+      var konamiSeq=[],konamiCode=[38,38,40,40,37,39,37,39,66,65];
+      var konamiFired=false;
+      document.addEventListener('keydown',function(e){
+        if(konamiFired)return;
+        konamiSeq.push(e.keyCode);
+        if(konamiSeq.length>10)konamiSeq.shift();
+        if(konamiSeq.length===10&&konamiSeq.every(function(k,i){return k===konamiCode[i]})){
+          konamiFired=true;
+          fireSupernova();
+        }
+      });
+      function fireSupernova(){
+        var overlay=document.getElementById('supernovaOverlay');
+        var particles=document.getElementById('supernovaParticles');
+        if(!overlay||!particles)return;
+        overlay.classList.add('active');
+        // Generate particles
+        var frag='';
+        for(var i=0;i<80;i++){
+          var angle=Math.random()*360,dist=100+Math.random()*300,size=3+Math.random()*8;
+          var color=['#ffd875','#ff8844','#ffcc88','#ffffff','#ffaa66'][Math.floor(Math.random()*5)];
+          frag+='<div class="sn-particle" style="--a:'+angle+'deg;--d:'+dist+'px;--s:'+size+'px;--c:'+color+';--delay:'+(Math.random()*0.4).toFixed(2)+'s"></div>';
+        }
+        particles.innerHTML=frag;
+        setTimeout(function(){overlay.classList.remove('active');konamiFired=false;particles.innerHTML=''},3000);
+      }
+
       // ── Theme ──
       var themeBtn=document.getElementById('themeBtn');
       if(themeBtn){
         themeBtn.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'☀':'☾';
         themeBtn.addEventListener('click',function(){
           var h=document.documentElement,n=h.getAttribute('data-theme')==='dark'?'light':'dark';
+          h.classList.add('theme-transitioning');
           h.setAttribute('data-theme',n);localStorage.setItem('theme',n);
           themeBtn.textContent=n==='dark'?'☀':'☾';
+          setTimeout(function(){h.classList.remove('theme-transitioning')},500);
         });
       }
 
@@ -173,10 +240,35 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
 
       // ── Back to top ──
       var btt=document.getElementById('backToTop');
-      if(btt){window.addEventListener('scroll',function(){btt.classList.toggle('visible',window.scrollY>400)},{passive:true});btt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})})}
+      if(btt){window.addEventListener('scroll',function(){var pct=Math.round(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100);btt.classList.toggle('visible',window.scrollY>400);btt.setAttribute('data-scroll-pct',Math.min(pct,100))},{passive:true});btt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})})}
 
-      // ── Code copy buttons ──
-      document.querySelectorAll('pre').forEach(function(pre){var wrap=document.createElement('div');wrap.className='code-block-wrap';pre.parentNode.insertBefore(wrap,pre);wrap.appendChild(pre);var btn=document.createElement('button');btn.className='copy-btn';btn.textContent='Copy';wrap.appendChild(btn);btn.addEventListener('click',function(){var code=pre.querySelector('code')?.textContent||pre.textContent||'';navigator.clipboard.writeText(code).then(function(){btn.textContent='Copied!';btn.classList.add('copied');setTimeout(function(){btn.textContent='Copy';btn.classList.remove('copied')},2000)})})});
+      // ── Code copy buttons + language labels ──
+      document.querySelectorAll('pre').forEach(function(pre){
+        var wrap=document.createElement('div');wrap.className='code-block-wrap';
+        pre.parentNode.insertBefore(wrap,pre);wrap.appendChild(pre);
+
+        // Language label
+        var code=pre.querySelector('code');
+        var langClass=code?.className||'';
+        var langMatch=langClass.match(/language-(\w+)/);
+        if(langMatch){
+          var label=document.createElement('span');label.className='code-lang-label';
+          label.textContent=langMatch[1];
+          wrap.appendChild(label);
+        }
+
+        // Copy button
+        var btn=document.createElement('button');btn.className='copy-btn';btn.textContent='📋 Copy';
+        wrap.appendChild(btn);
+        btn.addEventListener('click',function(){
+          var codeText=pre.querySelector('code')?.textContent||pre.textContent||'';
+          navigator.clipboard.writeText(codeText).then(function(){
+            btn.textContent='✓ Copied';btn.classList.add('copied');
+            showToast('Code copied to clipboard','📋');
+            setTimeout(function(){btn.textContent='📋 Copy';btn.classList.remove('copied')},2000);
+          });
+        });
+      });
 
       // ── Random warp ──
       var randomBtn=document.getElementById('randomBtn');
@@ -271,29 +363,73 @@ function isActive(href:string){if(href==='/')return currentPath==='/';return cur
 
       // ── Search ──
       var overlay=document.getElementById('searchOverlay'),input=document.getElementById('searchInput'),results=document.getElementById('searchResults');
-      function openSearch(){overlay.classList.add('open');input.value='';input.focus();renderResults('');document.body.style.overflow='hidden'}
-      function closeSearch(){overlay.classList.remove('open');document.body.style.overflow=''}
+      var searchRecent=document.getElementById('searchRecent'),searchRecentChips=document.getElementById('searchRecentChips');
+      var searchSelectedIdx=-1;
+
+      function loadRecent(){
+        try{
+          var recent=JSON.parse(localStorage.getItem('cosmicRecent')||'[]');
+          if(!recent.length){searchRecent.style.display='none';return}
+          searchRecent.style.display='block';
+          searchRecentChips.innerHTML=recent.map(function(r){
+            return '<button class="search-recent-chip" data-query="'+r.replace(/"/g,'&quot;')+'">'+r+'</button>';
+          }).join('');
+          searchRecentChips.querySelectorAll('.search-recent-chip').forEach(function(chip){
+            chip.addEventListener('click',function(){
+              input.value=this.dataset.query||'';
+              renderResults(input.value);input.focus();
+              searchRecent.style.display='none';
+            });
+          });
+        }catch(e){}
+      }
+      function openSearch(){overlay.classList.add('open');input.value='';input.focus();searchSelectedIdx=-1;loadRecent();renderResults('');document.body.style.overflow='hidden'}
+      function closeSearch(){overlay.classList.remove('open');document.body.style.overflow='';searchSelectedIdx=-1}
       function highlightText(text,q){
         if(!q.trim())return text;
         var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
         return text.replace(re,'<mark class="search-highlight">$1</mark>');
       }
       function renderResults(q){
-        if(!q.trim()){results.innerHTML='<div class="search-empty">Type to discover stars...</div>';return}
+        searchSelectedIdx=-1;
+        if(!q.trim()){results.innerHTML='<div class="search-empty">Type to discover stars...</div>';loadRecent();return}
+        searchRecent.style.display='none';
+        // 42 Easter egg
+        if(q.trim()==='42'){
+          results.innerHTML='<div class="search-empty" style="padding:24px 0"><div style="font-size:3rem;margin-bottom:8px">🐬</div><div style="font-family:var(--font-display);color:var(--star-gold);font-size:var(--text-sm);margin-bottom:4px">"Don\'t Panic."</div><div style="color:var(--text-dim);font-size:var(--text-xs)">The Answer to the Ultimate Question of Life, the Universe, and Everything.</div></div>';
+          return;
+        }
         var qq=q.toLowerCase();
         var m=sIdx.filter(function(p){
           return p.title.toLowerCase().indexOf(qq)!==-1||p.description.toLowerCase().indexOf(qq)!==-1||(p.content||'').toLowerCase().indexOf(qq)!==-1||(p.tags||[]).some(function(t){return t.toLowerCase().indexOf(qq)!==-1});
         });
-        if(!m.length){results.innerHTML='<div class="search-empty">No celestial bodies found in this region.</div>';return}
-        results.innerHTML=m.map(function(p){
+        if(!m.length){results.innerHTML='<div class="search-empty">No celestial bodies found.</div>';return}
+        results.innerHTML=m.map(function(p,i){
           var snippet='';
           var body=p.content||'';
           var idx=body.toLowerCase().indexOf(qq);
           if(idx>=0){var s=Math.max(0,idx-40),e=Math.min(body.length,idx+qq.length+40);snippet=body.slice(s,e);if(s>0)snippet='…'+snippet;if(e<body.length)snippet+='…'}
-          return '<a href="/blog/'+p.id+'" class="search-result"><span class="search-result-date">'+new Date(p.date).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+'</span><div class="search-result-info"><div class="search-result-title">'+highlightText(p.title,q)+'</div><div class="search-result-desc">'+highlightText(p.description,q)+'</div>'+(snippet?'<div class="search-result-snippet">'+highlightText(snippet,q)+'</div>':'')+'</div><div class="search-result-tags">'+(p.tags||[]).slice(0,2).map(function(t){return '<span class="search-result-tag">'+t+'</span>'}).join('')+'</div></a>'
+          return '<a href="/blog/'+p.id+'" class="search-result" data-index="'+i+'"><span class="search-result-date">'+new Date(p.date).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+'</span><div class="search-result-info"><div class="search-result-title">'+highlightText(p.title,q)+'</div><div class="search-result-desc">'+highlightText(p.description,q)+'</div>'+(snippet?'<div class="search-result-snippet">'+highlightText(snippet,q)+'</div>':'')+'</div><div class="search-result-tags">'+(p.tags||[]).slice(0,2).map(function(t){return '<span class="search-result-tag">'+t+'</span>'}).join('')+'</div></a>'
         }).join('');
         // Save recent search
         try{var recent=JSON.parse(localStorage.getItem('cosmicRecent')||'[]');recent=recent.filter(function(r){return r!==q});recent.unshift(q);recent=recent.slice(0,5);localStorage.setItem('cosmicRecent',JSON.stringify(recent))}catch(e){}
+      }
+      // Keyboard navigation in search
+      input.addEventListener('keydown',function(e){
+        var items=results.querySelectorAll('.search-result');
+        if(e.key==='ArrowDown'){e.preventDefault();searchSelectedIdx=Math.min(searchSelectedIdx+1,items.length-1);updateSearchSelection(items)}
+        else if(e.key==='ArrowUp'){e.preventDefault();searchSelectedIdx=Math.max(searchSelectedIdx-1,-1);updateSearchSelection(items)}
+        else if(e.key==='Enter'){
+          if(searchSelectedIdx>=0&&items[searchSelectedIdx]){
+            e.preventDefault();var href=items[searchSelectedIdx].getAttribute('href');
+            if(href)window.location.href=href;
+          }
+        }
+      });
+      function updateSearchSelection(items){
+        items.forEach(function(item,i){
+          if(i===searchSelectedIdx){item.classList.add('search-selected');item.focus()}else{item.classList.remove('search-selected')}
+        });
       }
       document.getElementById('searchBtn').addEventListener('click',openSearch);
       overlay.addEventListener('click',function(e){if(e.target===overlay)closeSearch()});

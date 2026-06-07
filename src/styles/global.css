@@ -714,3 +714,169 @@ body.immersive { background:var(--void-deep) }
 .nebula-friend-desc{
   font-family:var(--font-mono);font-size:0.4rem;color:var(--text-muted);margin-top:2px;text-align:center;max-width:100px
 }
+
+/* ═══════════════════════════════════
+   TOAST NOTIFICATION
+   ═══════════════════════════════════ */
+.toast-container{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:800;display:flex;flex-direction:column;align-items:center;
+  gap:8px;pointer-events:none;
+}
+.toast{
+  font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--star-gold);
+  background:var(--surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:20px;
+  padding:8px 20px;opacity:0;transform:translateY(10px);
+  transition:opacity 0.3s,transform 0.3s;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ═══════════════════════════════════
+   SUPERNOVA OVERLAY (Konami Code)
+   ═══════════════════════════════════ */
+.supernova-overlay{
+  position:fixed;inset:0;z-index:900;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.3s;
+}
+.supernova-overlay.active{opacity:1}
+.supernova-text{
+  font-family:var(--font-display);font-size:var(--text-4xl);
+  color:var(--star-gold);letter-spacing:0.2em;z-index:901;
+  animation:snBoom 0.6s ease-out forwards;
+  text-shadow:0 0 40px var(--star-glow),0 0 80px var(--star-glow),0 0 160px rgba(255,216,117,0.6);
+}
+@keyframes snBoom{
+  0%{transform:scale(0.1);opacity:0}
+  50%{transform:scale(1.4);opacity:1}
+  100%{transform:scale(1);opacity:0}
+}
+.sn-particle{
+  position:absolute;top:50%;left:50%;
+  width:var(--s);height:var(--s);border-radius:50%;
+  background:var(--c);
+  box-shadow:0 0 calc(var(--s)*2) var(--c),0 0 calc(var(--s)*4) var(--c);
+  animation:snFly 2.5s ease-out var(--delay) forwards;
+  opacity:0;
+}
+@keyframes snFly{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a)) translateX(0)}
+  20%{opacity:1}
+  80%{opacity:0.6}
+  100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a)) translateX(var(--d))}
+}
+
+/* ═══════════════════════════════════
+   SEARCH RECENT CHIPS
+   ═══════════════════════════════════ */
+.search-recent{margin-top:16px}
+.search-recent-title{
+  font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;
+}
+.search-recent-chips{display:flex;flex-wrap:wrap;gap:6px}
+.search-recent-chip{
+  font-family:var(--font-display);font-size:0.55rem;color:var(--text-dim);
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:4px 12px;cursor:pointer;transition:all 0.2s;
+  letter-spacing:0.03em;
+}
+.search-recent-chip:hover{color:var(--star-gold);border-color:var(--star-gold);background:rgba(255,208,102,0.06);box-shadow:0 0 8px var(--star-glow)}
+
+/* ═══════════════════════════════════
+   SEARCH KEYBOARD NAVIGATION
+   ═══════════════════════════════════ */
+.search-result.search-selected{
+  background:rgba(255,208,102,0.08);border-left:2px solid var(--star-gold);
+  outline:none;box-shadow:inset 0 0 16px rgba(255,208,102,0.06);
+}
+.search-result:focus-visible{outline:1px solid var(--star-gold);outline-offset:-2px}
+
+/* ═══════════════════════════════════
+   CODE LANGUAGE LABEL
+   ═══════════════════════════════════ */
+.code-lang-label{
+  position:absolute;top:8px;left:12px;
+  font-family:var(--font-display);font-size:0.45rem;letter-spacing:0.06em;
+  color:var(--star-gold);opacity:0.5;
+  pointer-events:none;text-transform:uppercase;
+}
+
+/* ═══════════════════════════════════
+   HEADING ANCHOR
+   ═══════════════════════════════════ */
+.heading-anchor{
+  display:inline-block;margin-left:8px;opacity:0;
+  font-family:var(--font-mono);font-size:0.75em;color:var(--star-gold);
+  text-decoration:none;transition:opacity 0.2s;vertical-align:middle;
+  cursor:pointer;
+}
+h2:hover .heading-anchor,h3:hover .heading-anchor{opacity:0.5}
+.heading-anchor:hover{opacity:1!important;text-shadow:0 0 8px var(--star-glow)}
+.heading-anchor.anchor-copied{opacity:1!important;color:#44dd88}
+
+/* ═══════════════════════════════════
+   SHARE BUTTON
+   ═══════════════════════════════════ */
+.share-btn{
+  font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.06em;
+  color:var(--star-gold);background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:6px 14px;cursor:pointer;
+  transition:all 0.3s;white-space:nowrap;flex-shrink:0;
+}
+.share-btn:hover{border-color:var(--star-gold);box-shadow:0 0 12px var(--star-glow)}
+.share-btn.shared{border-color:#44dd88;color:#44dd88}
+
+/* ═══════════════════════════════════
+   FOCUS STYLES (ACCESSIBILITY)
+   ═══════════════════════════════════ */
+button:focus-visible,a:focus-visible,input:focus-visible{
+  outline:1px solid var(--star-gold);outline-offset:2px;
+}
+.cosmic-tool-btn:focus-visible{outline-offset:1px;box-shadow:0 0 12px var(--star-glow)}
+
+/* ═══════════════════════════════════
+   MOBILE NAV ANIMATION
+   ═══════════════════════════════════ */
+@media(max-width:768px){
+  .cosmic-nav:not(.open){max-height:0;overflow:hidden}
+  .cosmic-nav.open{animation:navSlideIn 0.25s ease-out}
+  @keyframes navSlideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+}
+
+/* ═══════════════════════════════════
+   STAR ORBIT RING (homepage hover)
+   ═══════════════════════════════════ */
+.celestial-body::after{
+  content:'';position:absolute;inset:-30%;
+  border-radius:50%;
+  border:1px solid transparent;
+  transition:all 0.4s ease;
+  pointer-events:none;
+}
+.celestial-body:hover::after{
+  inset:-45%;
+  border-color:rgba(255,216,117,0.18);
+  animation:orbitSpin 8s linear infinite;
+}
+@keyframes orbitSpin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════
+   BACK TO TOP SCROLL INDICATOR
+   ═══════════════════════════════════ */
+.back-to-top[data-scroll-pct]::after{
+  content:attr(data-scroll-pct) '%';
+  font-family:var(--font-mono);font-size:0.4rem;
+  position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+  color:var(--text-muted);opacity:0;
+  transition:opacity 0.3s;
+}
+.back-to-top.visible[data-scroll-pct]::after{opacity:1}
+
+/* ═══════════════════════════════════
+   THEME TRANSITION SMOOTHING
+   ═══════════════════════════════════ */
+.theme-transitioning,.theme-transitioning *{transition:all 0.4s ease!important}
