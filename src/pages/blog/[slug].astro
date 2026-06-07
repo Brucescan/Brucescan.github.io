@@ -25,63 +25,76 @@ const chineseChars = (bodyText.match(/[一-鿿]/g) || []).length;
 const englishWords = (bodyText.match(/[a-zA-Z]+/g) || []).length;
 const readingMinutes = Math.max(1, Math.ceil(Math.max(chineseChars / 400, englishWords / 200)));
 
-const allPosts = await getCollection("blog");
 const formattedDate = post.data.date.toLocaleDateString("zh-CN", {
   year: "numeric", month: "long", day: "numeric",
 });
 
-const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
-
+const allPosts = await getCollection("blog");
 const sortedAll = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const currentIndex = sortedAll.findIndex((p) => p.id === id);
 const prevPost = currentIndex > 0 ? sortedAll[currentIndex - 1] : null;
 const nextPost = currentIndex < sortedAll.length - 1 ? sortedAll[currentIndex + 1] : null;
+
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// Get sibling articles for quick nav
+const siblings = sortedAll.filter(p => p.id !== id).slice(0, 5);
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description} autoOpen={`article-${id}`}>
-  <!-- Desktop icon to return to this article -->
-  <Fragment slot="icons">
-    <div class="desk-icon" data-action="open-window" data-target="questlog" title="Quest Log — Browse all articles">
-      <div class="desk-icon-sprite">📖</div>
-      <div class="desk-icon-label">Quest Log</div>
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  appName={`Scroll: ${post.data.title}`}
+  appIcon="📜"
+>
+  <div class="program">
+    <!-- Menu bar -->
+    <div class="program-titlebar">
+      <span class="program-title">📜 SCROLL READER — {post.data.title}</span>
+      <a href="/" class="program-menu" title="Back to Desktop">◀ Desktop</a>
     </div>
-    <div class="desk-icon" data-action="open-window" data-target="tags" title="Spell Schools">
-      <div class="desk-icon-sprite">📁</div>
-      <div class="desk-icon-label">Spell Schools</div>
-    </div>
-    <div class="desk-icon" data-action="open-window" data-target="about" title="README.txt">
-      <div class="desk-icon-sprite">ℹ️</div>
-      <div class="desk-icon-label">README.txt</div>
-    </div>
-  </Fragment>
 
-  <!-- SEO: Full article content visible to search engines -->
-  <div id="seo-content" style="display:none" aria-hidden="true">
-    <article>
-      <h1>{post.data.title}</h1>
-      <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
-      <Content />
-    </article>
-  </div>
-
-  <!-- Pass full article HTML as a template for the window -->
-  <div id="article-full-content" style="display:none">
-    <div style="padding:8px">
-      <div style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--win-shadow);font-size:var(--text-xs);color:var(--text-secondary)">
-        📅 {formattedDate} &nbsp;·&nbsp; ⏱ ~{readingMinutes} min read &nbsp;·&nbsp;
-        {post.data.tags.map(tag => (
-          <a href={`/tags/${tag.toLowerCase()}`} style="margin:0 2px;color:var(--accent-blue)">#{tag}</a>
-        ))}
+    <div class="program-body">
+      <!-- Article metadata bar -->
+      <div class="article-meta">
+        <span>📅 {formattedDate}</span>
+        <span>·</span>
+        <span>⏱ ~{readingMinutes} min</span>
+        {post.data.tags.length > 0 && (
+          <>
+            <span>·</span>
+            {post.data.tags.map((tag) => (
+              <a href={`/tags/${tag.toLowerCase()}`}>#{tag}</a>
+            ))}
+          </>
+        )}
       </div>
+
+      <!-- Article content -->
       <Content />
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--win-shadow);display:flex;justify-content:space-between;align-items:center">
+
+      <!-- Prev / Next navigation -->
+      <nav class="article-nav">
         {prevPost ? (
-          <a href={`/blog/${prevPost.id}`} style="font-size:var(--text-xs);color:var(--accent-blue)">◀ {prevPost.data.title}</a>
+          <a href={`/blog/${prevPost.id}`}>◀ Previous: {prevPost.data.title}</a>
         ) : <span></span>}
         {nextPost ? (
-          <a href={`/blog/${nextPost.id}`} style="font-size:var(--text-xs);color:var(--accent-blue)">{nextPost.data.title} ▶</a>
+          <a href={`/blog/${nextPost.id}`}>Next: {nextPost.data.title} ▶</a>
         ) : <span></span>}
-      </div>
+      </nav>
+
+      <!-- More scrolls -->
+      {siblings.length > 0 && (
+        <div style="margin-top:20px;padding-top:12px;border-top:2px solid var(--shadow)">
+          <p style="font-family:var(--font-ui);font-size:0.7rem;color:var(--text-dim);margin-bottom:8px">MORE SCROLLS:</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            {siblings.map((s) => (
+              <a href={`/blog/${s.id}`} style="font-family:var(--font-ui);font-size:0.6rem;padding:4px 10px;background:var(--face);text-decoration:none;color:var(--text);box-shadow:inset 1px 1px 0 var(--highlight),inset -1px -1px 0 var(--shadow)">{s.data.title}</a>
+            ))}
+            <a href="/" style="font-family:var(--font-ui);font-size:0.6rem;padding:4px 10px;background:var(--face);text-decoration:none;color:var(--text);box-shadow:inset 1px 1px 0 var(--highlight),inset -1px -1px 0 var(--shadow)">← Desktop</a>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 
@@ -95,7 +108,4 @@ const nextPost = currentIndex < sortedAll.length - 1 ? sortedAll[currentIndex + 
     "url": pageUrl,
   })}>
   </script>
-
-  <!-- Register article content for window manager -->
-  <script set:html={`window._articleHTML_${id} = document.getElementById('article-full-content')?.innerHTML || '';`}></script>
 </BaseLayout>

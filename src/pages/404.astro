@@ -2,11 +2,21 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Fatal Error" is404={true}>
-  <Fragment slot="icons">
-    <div class="desk-icon" data-action="open-window" data-target="questlog" title="Quest Log">
-      <div class="desk-icon-sprite">📖</div>
-      <div class="desk-icon-label">Quest Log</div>
+<BaseLayout title="Fatal Error" appName="System Error" appIcon="⚠">
+  <div class="bsod" onclick="window.location.href='/'">
+    <div class="bsod-head">ARCANE OS</div>
+    <div class="bsod-face">:(</div>
+    <div class="bsod-text">
+      A fatal exception 0x00000404 has occurred at 0028:C0001234 in VXD BLOG(01).<br><br>
+      The current page could not be found.<br>
+      The realm you seek does not exist in this dimension.<br><br>
+      * Press any key to return to the desktop.<br>
+      * Or just click anywhere. That works too.
     </div>
-  </Fragment>
+    <div class="bsod-prompt">Press any key to continue...</div>
+  </div>
+
+  <script>
+    document.addEventListener('keydown',function(){window.location.href='/'});
+  </script>
 </BaseLayout>

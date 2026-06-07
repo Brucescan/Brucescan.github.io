@@ -6,7 +6,7 @@ const allPosts = await getCollection("blog");
 const sortedPosts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const latestPost = sortedPosts[0];
 
-// Build tag list
+// Build tag list for tag browser page
 const tagMap = new Map<string, number>();
 for (const post of allPosts) {
   for (const tag of post.data.tags) {
@@ -19,63 +19,66 @@ const tags = Array.from(tagMap.entries())
 ---
 
 <BaseLayout>
-  <!-- Desktop Icons -->
-  <Fragment slot="icons">
-    <!-- Quest Log -->
-    <div class="desk-icon" data-action="open-window" data-target="questlog" title="Quest Log — Browse all articles">
-      <div class="desk-icon-sprite">📖</div>
-      <div class="desk-icon-label">Quest Log</div>
+  <div class="desktop">
+    <div class="desktop-icons">
+      <!-- Quest Log: opens blog list page -->
+      <a href="/blog/c_note" class="desk-icon" title="Browse all articles">
+        <div class="desk-icon-sprite">📖</div>
+        <div class="desk-icon-label">Quest Log</div>
+      </a>
+
+      <!-- Latest article -->
+      {latestPost && (
+        <a href={`/blog/${latestPost.id}`} class="desk-icon" title={latestPost.data.title}>
+          <div class="desk-icon-sprite">📜</div>
+          <div class="desk-icon-label">Latest Scroll</div>
+        </a>
+      )}
+
+      <!-- Each article as an icon -->
+      {sortedPosts.map((post) => (
+        <a href={`/blog/${post.id}`} class="desk-icon" title={post.data.title}>
+          <div class="desk-icon-sprite">📝</div>
+          <div class="desk-icon-label">{post.data.title.length > 18 ? post.data.title.substring(0, 18) + '…' : post.data.title}</div>
+        </a>
+      ))}
+
+      <!-- Tags / Spell Schools -->
+      {tags.length > 0 && (
+        <a href={`/tags/${tags[0].name.toLowerCase()}`} class="desk-icon" title="Browse by tag">
+          <div class="desk-icon-sprite">📁</div>
+          <div class="desk-icon-label">Spell Schools</div>
+        </a>
+      )}
+
+      <!-- GitHub -->
+      <a href="https://github.com/brucescan" class="desk-icon" target="_blank" rel="noopener" title="GitHub">
+        <div class="desk-icon-sprite">⚔</div>
+        <div class="desk-icon-label">GitHub</div>
+      </a>
+
+      <!-- RSS -->
+      <a href="/rss.xml" class="desk-icon" title="RSS Feed">
+        <div class="desk-icon-sprite">📡</div>
+        <div class="desk-icon-label">RSS Feed</div>
+      </a>
+
+      <!-- 404 easter egg -->
+      <a href="/404" class="desk-icon" title="The void">
+        <div class="desk-icon-sprite">🗑</div>
+        <div class="desk-icon-label">Recycle Bin</div>
+      </a>
     </div>
+  </div>
 
-    <!-- Latest Post -->
-    {latestPost && (
-      <div class="desk-icon" data-action="open-article" data-target={latestPost.id} title={`Latest: ${latestPost.data.title}`}>
-        <div class="desk-icon-sprite">📜</div>
-        <div class="desk-icon-label">Latest Scroll</div>
-      </div>
-    )}
-
-    <!-- Spell Schools -->
-    <div class="desk-icon" data-action="open-window" data-target="tags" title="Spell Schools — Browse by tag">
-      <div class="desk-icon-sprite">📁</div>
-      <div class="desk-icon-label">Spell Schools</div>
-    </div>
-
-    <!-- README -->
-    <div class="desk-icon" data-action="open-window" data-target="about" title="README.txt — About this realm">
-      <div class="desk-icon-sprite">ℹ️</div>
-      <div class="desk-icon-label">README.txt</div>
-    </div>
-
-    <!-- Cat Runner -->
-    <div class="desk-icon" data-action="open-window" data-target="catgame" title="Cat Runner — Mini game">
-      <div class="desk-icon-sprite">🐱</div>
-      <div class="desk-icon-label">Cat Runner</div>
-    </div>
-
-    <!-- Individual article icons -->
-    {sortedPosts.slice(0, 4).map((post) => (
-      <div class="desk-icon" data-action="open-article" data-target={post.id} title={post.data.title}>
-        <div class="desk-icon-sprite">📝</div>
-        <div class="desk-icon-label">{post.data.title.length > 12 ? post.data.title.substring(0, 12) + '…' : post.data.title}</div>
-      </div>
-    ))}
-  </Fragment>
-
-  <!-- Hidden templates for SEO and content -->
-  <Fragment slot="templates">
-    <!-- These are indexed by search engines -->
-    <div id="seo-content" style="display:none" aria-hidden="true">
-      <h1>Flazi的桃花源 — Blog</h1>
-      <p>A retro fantasy operating system and blog. Browse quests (articles), explore spell schools (tags), and discover knowledge.</p>
-      <ul>
-        {sortedPosts.map((post) => (
-          <li><a href={`/blog/${post.id}`}>{post.data.title}</a> — {post.data.description}</li>
-        ))}
-      </ul>
-    </div>
-  </Fragment>
-
-  <!-- Pass tag data to window manager -->
-  <script set:html={`window._tagData = ${JSON.stringify(tags)};`}></script>
+  <!-- SEO content (hidden for search engines) -->
+  <div style="display:none" aria-hidden="true">
+    <h1>Flazi的桃花源 — Blog</h1>
+    <p>A retro fantasy operating system. Explore quests (articles), learn spells (tags), discover knowledge.</p>
+    <ul>
+      {sortedPosts.map((post) => (
+        <li><a href={`/blog/${post.id}`}>{post.data.title}</a> — {post.data.description}</li>
+      ))}
+    </ul>
+  </div>
 </BaseLayout>

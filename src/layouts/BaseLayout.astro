@@ -7,11 +7,11 @@ interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
-  autoOpen?: string;   // window ID to auto-open on load
-  is404?: boolean;
+  appName?: string;
+  appIcon?: string;
 }
 
-const { title, description, ogImage, autoOpen, is404 } = Astro.props;
+const { title, description, ogImage, appName, appIcon } = Astro.props;
 
 const pageTitle = title ? `${title} — ${site.title}` : site.title;
 const pageDescription = description ?? site.description;
@@ -19,14 +19,14 @@ const pageUrl = new URL(Astro.url.pathname, site.url).href;
 const ogImageUrl = ogImage ? new URL(ogImage, site.url).href : new URL("/images/og.jpg", site.url).href;
 
 const allPosts = await getCollection("blog");
-const searchIndex = allPosts.map((p) => ({
+const searchData = allPosts.map((p) => ({
   id: p.id,
   title: p.data.title,
   description: p.data.description,
-  date: p.data.date.toISOString(),
 }));
-const sortedPosts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-const latestPost = sortedPosts[0];
+
+const currentApp = appName ?? "";
+const currentIcon = appIcon ?? "";
 ---
 
 <!doctype html>
@@ -50,736 +50,125 @@ const latestPost = sortedPosts[0];
   <meta name="twitter:title" content={pageTitle} />
   <meta name="twitter:description" content={pageDescription} />
   <meta name="twitter:image" content={ogImageUrl} />
-
   <script is:inline>
-    (function() {
-      var stored = localStorage.getItem("theme");
-      var theme = stored || "dark";
-      document.documentElement.setAttribute("data-theme", theme);
-    })();
+    (function(){var s=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",s||"dark")})();
   </script>
 </head>
-<body class:list={[{ "no-transition": false }]}>
-  <!-- ═══════════════════════════════════════════
-       BOOT SCREEN
-       ═══════════════════════════════════════════ -->
+<body>
+  <!-- Boot Screen (first visit only) -->
   <div class="boot-screen" id="bootScreen" aria-hidden="true">
     <div class="boot-logo">ARCANE OS</div>
     <div class="boot-info">
-      <div><span class="label">BIOS:</span> <span class="ok">OK</span></div>
-      <div><span class="label">CPU:</span> <span class="ok">PixelRISC-64 @ 16MHz</span></div>
-      <div><span class="label">MEM:</span> <span class="ok">640K OK</span></div>
-      <div><span class="label">VGA:</span> <span class="ok">OK</span></div>
-      <div><span class="label">DISK:</span> <span class="ok">Found</span></div>
-      <div id="bootMemCheck">Checking memory<span class="blink">...</span></div>
+      <div><span class="dim">BIOS:</span> <span class="ok">OK</span></div>
+      <div><span class="dim">MEM:</span> <span class="ok">640K OK</span></div>
+      <div id="bootCheck"><span class="dim">DISK:</span> Loading<span class="blink">...</span></div>
     </div>
-    <div class="boot-bar-wrap"><div class="boot-bar-fill" id="bootBar"></div></div>
+    <div class="boot-bar"><div class="boot-bar-inner"></div></div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       DESKTOP
-       ═══════════════════════════════════════════ -->
-  <div class="desktop" id="desktop">
-    <!-- Desktop icons -->
-    <div class="desktop-icons" id="desktopIcons">
-      <slot name="icons" />
-    </div>
+  <!-- Page content -->
+  <slot />
 
-    <!-- Windows container -->
-    <div id="windowsContainer" aria-live="polite"></div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════
-       TASKBAR
-       ═══════════════════════════════════════════ -->
-  <div class="taskbar" id="taskbar">
-    <button class="start-btn" id="startBtn" aria-label="Start" title="Start">
-      <span class="start-btn-icon">⚔</span> Start
-    </button>
-    <div class="taskbar-tabs" id="taskbarTabs"></div>
-    <div class="system-tray">
-      <button class="tray-btn" id="trayThemeBtn" title="Toggle theme">🌙</button>
-      <span class="tray-clock" id="trayClock">00:00</span>
+  <!-- Taskbar -->
+  <div class="taskbar">
+    <a href="/" class="taskbar-btn" title="Desktop">⚔ Start</a>
+    {currentApp && (
+      <div class="taskbar-tab active">
+        <span>{currentIcon}</span> {currentApp}
+      </div>
+    )}
+    <div class="taskbar-right">
+      <button class="tray-btn" id="searchBtn" title="Search (Ctrl+K)">🔍</button>
+      <button class="tray-btn" id="themeBtn" title="Toggle theme">🌙</button>
+      <div class="tray" id="clock">00:00</div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       START MENU
-       ═══════════════════════════════════════════ -->
-  <div class="start-menu" id="startMenu">
-    <div class="start-sidebar"><span class="start-sidebar-text">ARCANE OS</span></div>
-    <div class="start-items">
-      <button class="start-item" data-action="questlog">
-        <span class="start-item-icon">📖</span> Quest Log
-      </button>
-      <button class="start-item" data-action="tags">
-        <span class="start-item-icon">📁</span> Spell Schools
-      </button>
-      <button class="start-item" data-action="about">
-        <span class="start-item-icon">ℹ️</span> README.txt
-      </button>
-      <button class="start-item" data-action="catgame">
-        <span class="start-item-icon">🐱</span> Cat Runner
-      </button>
-      <div class="start-divider"></div>
-      <button class="start-item" data-action="search">
-        <span class="start-item-icon">🔍</span> Search...
-      </button>
-      <button class="start-item" data-action="run">
-        <span class="start-item-icon">▶</span> Run...
-      </button>
+  <!-- Search overlay -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-dialog">
+      <div class="search-titlebar">
+        <span class="search-title">🔍 Find Scroll</span>
+        <button class="search-close" id="searchClose">✕</button>
+      </div>
+      <div class="search-body">
+        <input class="search-input" id="searchInput" placeholder="Type to search..." autocomplete="off">
+        <div class="search-results" id="searchResults">
+          <div class="search-empty">Start typing to find articles...</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       CONTEXT MENU
-       ═══════════════════════════════════════════ -->
-  <div class="context-menu" id="contextMenu">
-    <button class="context-item" data-action="arrange">Arrange Icons</button>
-    <button class="context-item" data-action="refresh">Refresh Desktop</button>
-    <div class="context-divider"></div>
-    <button class="context-item" data-action="about">Properties</button>
-  </div>
+  <!-- Search data -->
+  <script type="application/json" id="searchData" set:html={JSON.stringify(searchData)}></script>
 
-  <!-- ═══════════════════════════════════════════
-       HIDDEN CONTENT TEMPLATES (SEO + cloning)
-       ═══════════════════════════════════════════ -->
-  <div class="hidden" aria-hidden="true">
-    <slot name="templates" />
-  </div>
-
-  <!-- Search index -->
-  <!-- Data injection for window manager -->
-  <script type="application/json" id="searchIndexData" set:html={JSON.stringify(searchIndex)}></script>
-  <script type="application/json" id="desktopConfig" set:html={JSON.stringify({
-    autoOpen: autoOpen ?? null,
-    siteTitle: site.title,
-    siteAuthor: site.author,
-    siteDesc: site.description,
-    siteUrl: site.url,
-    latestSlug: latestPost?.id ?? "",
-    latestTitle: latestPost?.data.title ?? "",
-    allPostData: sortedPosts.map(p => ({id:p.id,title:p.data.title,desc:p.data.description,date:p.data.date.toISOString()})),
-    is404: is404 ?? false,
-  })}></script>
-
-  <!-- ═══════════════════════════════════════════
-       DESKTOP ENGINE — Window Manager + Shell
-       ═══════════════════════════════════════════ -->
   <script>
     (function(){
-      // ── Config ──
-      var cfg = JSON.parse(document.getElementById('desktopConfig')?.textContent || '{}');
-      var autoOpen = cfg.autoOpen;
-      var siteTitle = cfg.siteTitle;
-      var siteAuthor = cfg.siteAuthor;
-      var siteDesc = cfg.siteDesc;
-      var siteUrl = cfg.siteUrl;
-      var latestSlug = cfg.latestSlug;
-      var latestTitle = cfg.latestTitle;
-      var allPostData = cfg.allPostData;
-
-      // ── Boot Sequence ──
-      (function boot(){
-        var screen = document.getElementById('bootScreen');
-        var bar = document.getElementById('bootBar');
-        var mem = document.getElementById('bootMemCheck');
-        if(!screen){ return; }
-
-        if(sessionStorage.getItem('booted')){
-          screen.remove();
-          initDesktop();
-          return;
-        }
-
-        // Animate memory check text
-        var addrs = ['0000','1000','2000','3000','4000','5000','6000','7000','8000','9000','A000'];
-        var ai=0;
-        var memInt = setInterval(function(){
-          if(ai>=addrs.length){ clearInterval(memInt); mem.innerHTML='Memory 640K <span class="ok">OK</span>'; return; }
-          mem.innerHTML = 'Checking '+addrs[ai]+'<span class="blink">_</span>';
-          ai++;
-        },180);
-
-        // Boot bar animation + remove
-        if(bar){ bar.style.animation = 'bootProgress 2.2s steps(22) forwards'; }
+      // ── Boot ──
+      var boot = document.getElementById('bootScreen');
+      if(boot && !sessionStorage.getItem('booted')){
         setTimeout(function(){
-          screen.classList.add('hidden');
-          setTimeout(function(){ screen.remove(); initDesktop(); },400);
+          document.getElementById('bootCheck').innerHTML='<span class="dim">DISK:</span> <span class="ok">Ready</span>';
+        },1600);
+        setTimeout(function(){
+          boot.classList.add('off');
+          setTimeout(function(){boot.remove()},500);
           sessionStorage.setItem('booted','1');
         },2400);
-      })();
-
-      // ── Desktop Init ──
-      function initDesktop(){
-        updateClock();
-        setInterval(updateClock,1000);
-
-        // Desktop click: deselect icons
-        document.getElementById('desktop').addEventListener('click',function(e){
-          if(e.target === this || e.target.id === 'desktopIcons'){
-            document.querySelectorAll('.desk-icon.selected').forEach(function(el){el.classList.remove('selected');});
-            document.getElementById('contextMenu').classList.remove('open');
-          }
-        });
-
-        // Right-click context menu
-        document.getElementById('desktop').addEventListener('contextmenu',function(e){
-          e.preventDefault();
-          var menu = document.getElementById('contextMenu');
-          menu.style.left = e.clientX + 'px';
-          menu.style.top = e.clientY + 'px';
-          menu.classList.add('open');
-        });
-        document.addEventListener('click',function(e){
-          if(!e.target.closest('.context-menu')){ document.getElementById('contextMenu').classList.remove('open'); }
-        });
-
-        // Context menu actions
-        document.getElementById('contextMenu').addEventListener('click',function(e){
-          var item = e.target.closest('.context-item');
-          if(!item) return;
-          var action = item.getAttribute('data-action');
-          if(action==='arrange'){ Desktop.arrangeIcons(); }
-          if(action==='refresh'){ Desktop.arrangeIcons(); }
-          if(action==='about'){ Desktop.openWindow('about','README.txt',buildAboutContent(),'ℹ️'); }
-          this.classList.remove('open');
-        });
-
-        // Start menu
-        var startBtn = document.getElementById('startBtn');
-        var startMenu = document.getElementById('startMenu');
-        startBtn.addEventListener('click',function(e){
-          e.stopPropagation();
-          startMenu.classList.toggle('open');
-        });
-        startMenu.addEventListener('click',function(e){
-          var item = e.target.closest('.start-item');
-          if(!item) return;
-          var action = item.getAttribute('data-action');
-          handleStartAction(action);
-          startMenu.classList.remove('open');
-        });
-        document.addEventListener('click',function(e){
-          if(!e.target.closest('.start-menu') && !e.target.closest('.start-btn')){
-            startMenu.classList.remove('open');
-          }
-        });
-
-        // Theme toggle
-        document.getElementById('trayThemeBtn').addEventListener('click',function(){
-          var html = document.documentElement;
-          var next = html.getAttribute('data-theme')==='dark'?'light':'dark';
-          html.setAttribute('data-theme',next);
-          localStorage.setItem('theme',next);
-          this.textContent = next==='dark'?'🌙':'☀';
-        });
-        // Init theme icon
-        document.getElementById('trayThemeBtn').textContent =
-          document.documentElement.getAttribute('data-theme')==='dark'?'🌙':'☀';
-
-        // Desktop icon interactions
-        document.getElementById('desktopIcons').addEventListener('dblclick',function(e){
-          var icon = e.target.closest('.desk-icon');
-          if(!icon) return;
-          var action = icon.getAttribute('data-action');
-          var target = icon.getAttribute('data-target');
-          var label = icon.querySelector('.desk-icon-label')?.textContent || '';
-          var sprite = icon.querySelector('.desk-icon-sprite')?.textContent || '📄';
-          desktopIconAction(action,target,label,sprite);
-        });
-        document.getElementById('desktopIcons').addEventListener('click',function(e){
-          var icon = e.target.closest('.desk-icon');
-          if(!icon) return;
-          document.querySelectorAll('.desk-icon.selected').forEach(function(el){el.classList.remove('selected');});
-          icon.classList.add('selected');
-        });
-
-        // Drag desktop icons
-        setupIconDrag();
-
-        // Auto-open window if specified
-        if(autoOpen){
-          setTimeout(function(){
-            var icon = document.querySelector('.desk-icon[data-target="'+autoOpen+'"]');
-            if(icon){
-              var act = icon.getAttribute('data-action');
-              var tgt = icon.getAttribute('data-target');
-              var lbl = icon.querySelector('.desk-icon-label')?.textContent || '';
-              var spr = icon.querySelector('.desk-icon-sprite')?.textContent || '📄';
-              desktopIconAction(act,tgt,lbl,spr);
-            }
-          },600);
-        }
-      }
-
-      function handleStartAction(action){
-        switch(action){
-          case 'questlog': Desktop.openWindow('questlog','Quest Log',buildQuestLogContent(),'📖'); break;
-          case 'tags': Desktop.openWindow('tags','Spell Schools',buildTagsContent(),'📁'); break;
-          case 'about': Desktop.openWindow('about','README.txt',buildAboutContent(),'ℹ️'); break;
-          case 'catgame': Desktop.openWindow('catgame','Cat Runner',buildCatGameContent(),'🐱'); break;
-          case 'search': openSearchDialog(); break;
-          case 'run': openRunDialog(); break;
-        }
-      }
-
-      function desktopIconAction(action,target,label,sprite){
-        switch(action){
-          case 'open-window':
-            if(target==='questlog') Desktop.openWindow('questlog','Quest Log',buildQuestLogContent(),'📖');
-            else if(target==='tags') Desktop.openWindow('tags','Spell Schools',buildTagsContent(),'📁');
-            else if(target==='about') Desktop.openWindow('about','README.txt',buildAboutContent(),'ℹ️');
-            else if(target==='catgame') Desktop.openWindow('catgame','Cat Runner',buildCatGameContent(),'🐱');
-            else if(target==='latest') Desktop.openWindow('latest',latestTitle,buildArticleContent(latestSlug,latestTitle,allPostData),'📝');
-            break;
-          case 'open-article':
-            if(target) Desktop.openWindow('article-'+target,label, buildArticleContent(target,label,allPostData),sprite||'📝');
-            break;
-        }
-      }
-
-      // ── Content builders ──
-      function buildQuestLogContent(){
-        var posts = allPostData;
-        var h = '<div style="padding:8px"><h2>📖 Quest Log</h2><p style="color:var(--text-secondary);margin-bottom:12px">'+posts.length+' quests available. Double-click to open.</p>';
-        posts.forEach(function(p){
-          h += '<div class="quest-item" data-slug="'+p.id+'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin:2px 0;cursor:pointer;border:1px solid transparent" onmouseover="this.style.borderColor=\'var(--win-shadow)\'" onmouseout="this.style.borderColor=\'transparent\'" ondblclick="Desktop.openWindow(\'article-'+p.id+'\',\''+p.title.replace(/'/g,"\\'")+'\',buildArticleContent(\''+p.id+'\',\''+p.title.replace(/'/g,"\\'")+'\',allPostData),\'\u{1F4DD}\')">';
-          h += '<span>📄</span>';
-          h += '<div><strong>'+p.title+'</strong><br><small style="color:var(--text-secondary)">'+p.desc.substring(0,60)+'...</small></div>';
-          h += '</div>';
-        });
-        h += '</div>';
-        return h;
-      }
-
-      function buildTagsContent(){
-        var tags = {};
-        allPostData.forEach(function(p){
-          // We need tag data from the search index... simplified version
-        });
-        var h = '<div style="padding:8px"><h2>📁 Spell Schools</h2><p style="color:var(--text-secondary)">Browse by tag category.</p>';
-        h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">';
-        // Build from the tag data embedded in the page
-        var tagSet = {};
-        allPostData.forEach(function(p){
-          // Unfortunately we don't have tags in the serialized data
-          // We'll build from window.a_tags if available
-        });
-        if(typeof window !== 'undefined' && window._tagData){
-          window._tagData.forEach(function(t){
-            h += '<a href="/tags/'+t.name.toLowerCase()+'" style="padding:4px 12px;background:var(--win-face);border:none;box-shadow:inset 1px 1px 0 var(--win-highlight),inset -1px -1px 0 var(--win-shadow);text-decoration:none;color:var(--text-primary);font-family:var(--font-system);font-size:var(--text-xs)">'+t.name+' ('+t.count+')</a>';
-          });
-        }
-        h += '</div></div>';
-        return h;
-      }
-
-      function buildAboutContent(){
-        return '<div style="padding:8px"><h2>ℹ️ README.txt</h2><pre style="background:transparent;border:none;box-shadow:none;font-family:var(--font-system);font-size:var(--text-sm);line-height:1.6">'+
-          'ARCANE OS v1.0\n'+
-          '================\n\n'+
-          'Author:  '+siteAuthor+'\n'+
-          'Site:    '+siteTitle+'\n'+
-          'URL:     '+siteUrl+'\n\n'+
-          'Description:\n'+
-          siteDesc+'\n\n'+
-          'This is a retro fantasy operating\n'+
-          'system that happens to be a blog.\n'+
-          'Double-click icons to explore.\n'+
-          'Right-click for options.\n\n'+
-          'Made with Astro + pixel dreams.\n'+
-          '</pre></div>';
-      }
-
-      function buildArticleContent(slug,title,posts){
-        var p = null;
-        for(var i=0;i<posts.length;i++){ if(posts[i].id===slug){ p=posts[i]; break; } }
-        if(!p) return '<p>Article not found.</p>';
-        return '<div style="padding:8px"><h2>'+title+'</h2>'+
-          '<p style="color:var(--text-secondary)">'+p.desc+'</p>'+
-          '<p style="color:var(--text-secondary)"><em>Open the full scroll at <a href="/blog/'+slug+'">/blog/'+slug+'</a></em></p>'+
-          '</div>';
-      }
-
-      function buildCatGameContent(){
-        return '<div style="text-align:center;padding:16px">'+
-          '<h2>🐱 Cat Runner</h2>'+
-          '<p style="color:var(--text-secondary)">Click to start the mini-game!</p>'+
-          '<canvas id="miniCatCanvas" width="320" height="180" style="border:2px solid var(--win-shadow);margin:12px auto;cursor:pointer;background:#1a1a2e;image-rendering:pixelated;width:100%;max-width:320px"></canvas>'+
-          '<p style="color:var(--text-muted);font-size:var(--text-xs)">Space/Up = Jump | Down = Duck</p>'+
-          '<p style="color:var(--text-muted);font-size:var(--text-2xs)">Mini version - open full game from desktop icon</p>'+
-          '</div>';
-      }
-
-      // ── Window Manager ──
-      var windowZIndex = 10;
-      var windowCount = 0;
-      var openWindows = {};
-
-      window.Desktop = {
-        openWindow: function(id, title, contentHTML, icon){
-          icon = icon || '📄';
-          // If already open, focus it
-          if(openWindows[id]){
-            Desktop.focusWindow(id);
-            return;
-          }
-
-          windowCount++;
-          windowZIndex = Math.max(windowZIndex,10) + 1;
-
-          var win = document.createElement('div');
-          win.className = 'window opening';
-          win.id = 'win-'+id;
-          win.setAttribute('data-window-id',id);
-          win.style.zIndex = windowZIndex;
-          win.style.left = (40 + (windowCount%5)*30) + 'px';
-          win.style.top = (40 + (windowCount%5)*30) + 'px';
-          win.style.width = Math.min(700, window.innerWidth-80) + 'px';
-          win.style.maxHeight = (window.innerHeight - 120) + 'px';
-
-          win.innerHTML = ''+
-            '<div class="window-titlebar" data-win-move="'+id+'">'+
-              '<span class="window-title-icon">'+icon+'</span>'+
-              '<span class="window-title-text">'+title+'</span>'+
-              '<button class="win-btn" data-win-action="minimize" title="Minimize">_</button>'+
-              '<button class="win-btn" data-win-action="maximize" title="Maximize">□</button>'+
-              '<button class="win-btn win-btn-close" data-win-action="close" title="Close">✕</button>'+
-            '</div>'+
-            '<div class="window-body">'+contentHTML+'</div>'+
-            '<div class="window-resize" data-win-resize="'+id+'"></div>';
-
-          document.getElementById('windowsContainer').appendChild(win);
-
-          // Remove opening animation class
-          setTimeout(function(){ win.classList.remove('opening'); },200);
-
-          // Focus on click
-          win.addEventListener('mousedown',function(){ Desktop.focusWindow(id); });
-
-          // Title bar buttons
-          win.querySelector('.win-btn-close').addEventListener('click',function(e){
-            e.stopPropagation(); Desktop.closeWindow(id);
-          });
-          win.querySelector('[data-win-action="minimize"]').addEventListener('click',function(e){
-            e.stopPropagation(); Desktop.minimizeWindow(id);
-          });
-          win.querySelector('[data-win-action="maximize"]').addEventListener('click',function(e){
-            e.stopPropagation(); Desktop.maximizeWindow(id);
-          });
-
-          // Drag
-          setupWindowDrag(win,id);
-
-          openWindows[id] = {el:win, title:title, icon:icon, minimized:false, maximized:false};
-          Desktop.focusWindow(id);
-          Desktop.updateTaskbar();
-        },
-
-        closeWindow: function(id){
-          var w = openWindows[id];
-          if(!w) return;
-          w.el.style.transition = 'all 0.15s steps(3)';
-          w.el.style.transform = 'scale(0.9)';
-          w.el.style.opacity = '0';
-          setTimeout(function(){
-            if(w.el.parentNode) w.el.remove();
-            delete openWindows[id];
-            Desktop.updateTaskbar();
-          },150);
-        },
-
-        minimizeWindow: function(id){
-          var w = openWindows[id];
-          if(!w) return;
-          w.minimized = !w.minimized;
-          w.el.classList.toggle('minimized',w.minimized);
-          if(w.minimized){
-            w.el.style.pointerEvents = 'none';
-          } else {
-            w.el.style.pointerEvents = '';
-            Desktop.focusWindow(id);
-          }
-          Desktop.updateTaskbar();
-        },
-
-        maximizeWindow: function(id){
-          var w = openWindows[id];
-          if(!w) return;
-          w.maximized = !w.maximized;
-          w.el.classList.toggle('maximized',w.maximized);
-          if(w.maximized){
-            w.el.style.resize = 'none';
-          }
-        },
-
-        focusWindow: function(id){
-          var w = openWindows[id];
-          if(!w) return;
-          if(w.minimized){ Desktop.minimizeWindow(id); }
-          windowZIndex++;
-          w.el.style.zIndex = windowZIndex;
-          // Unfocus all, focus this
-          Object.keys(openWindows).forEach(function(k){
-            openWindows[k].el.classList.remove('focused');
-          });
-          w.el.classList.add('focused');
-          Desktop.updateTaskbar();
-        },
-
-        updateTaskbar: function(){
-          var tabs = document.getElementById('taskbarTabs');
-          if(!tabs) return;
-          tabs.innerHTML = '';
-          Object.keys(openWindows).forEach(function(id){
-            var w = openWindows[id];
-            if(w.minimized && !document.querySelector('.window.focused[data-window-id="'+id+'"]')) return;
-            var tab = document.createElement('button');
-            tab.className = 'taskbar-tab';
-            if(w.el.classList.contains('focused')) tab.classList.add('active');
-            tab.innerHTML = '<span>'+w.icon+'</span> '+w.title;
-            tab.title = w.title;
-            tab.addEventListener('click',function(){
-              if(w.minimized){ Desktop.minimizeWindow(id); }
-              Desktop.focusWindow(id);
-            });
-            tabs.appendChild(tab);
-          });
-        },
-
-        arrangeIcons: function(){
-          // Reset icon positions in grid
-          var icons = document.querySelectorAll('.desk-icon');
-          icons.forEach(function(icon,i){
-            icon.style.gridColumn = '';
-            icon.style.gridRow = '';
-          });
-        }
-      };
-
-      // ── Window Drag ──
-      function setupWindowDrag(win,id){
-        var titlebar = win.querySelector('.window-titlebar');
-        if(!titlebar) return;
-        var isDragging = false;
-        var startX,startY,origX,origY;
-
-        titlebar.addEventListener('mousedown',function(e){
-          if(e.target.closest('.win-btn')) return;
-          if(openWindows[id] && openWindows[id].maximized) return;
-          isDragging = true;
-          startX = e.clientX; startY = e.clientY;
-          origX = win.offsetLeft; origY = win.offsetTop;
-          win.style.transition = 'none';
-          document.body.style.cursor = 'move';
-          e.preventDefault();
-        });
-
-        document.addEventListener('mousemove',function(e){
-          if(!isDragging) return;
-          var dx = e.clientX - startX;
-          var dy = e.clientY - startY;
-          win.style.left = Math.max(0, origX+dx) + 'px';
-          win.style.top = Math.max(0, origY+dy) + 'px';
-        });
-
-        document.addEventListener('mouseup',function(){
-          if(isDragging){
-            isDragging = false;
-            win.style.transition = '';
-            document.body.style.cursor = '';
-          }
-        });
-      }
-
-      // ── Icon Drag ──
-      function setupIconDrag(){
-        var icons = document.getElementById('desktopIcons');
-        var dragging = null;
-        var iconStartX,iconStartY,mouseStartX,mouseStartY;
-
-        icons.addEventListener('mousedown',function(e){
-          var icon = e.target.closest('.desk-icon');
-          if(!icon) return;
-          dragging = icon;
-          iconStartX = icon.offsetLeft;
-          iconStartY = icon.offsetTop;
-          mouseStartX = e.clientX;
-          mouseStartY = e.clientY;
-          icon.style.position = 'relative';
-          icon.style.zIndex = '5';
-          e.preventDefault();
-        });
-
-        document.addEventListener('mousemove',function(e){
-          if(!dragging) return;
-          var dx = e.clientX - mouseStartX;
-          var dy = e.clientY - mouseStartY;
-          dragging.style.left = dx + 'px';
-          dragging.style.top = dy + 'px';
-        });
-
-        document.addEventListener('mouseup',function(){
-          if(dragging){
-            dragging.style.zIndex = '';
-            saveIconPositions();
-            dragging = null;
-          }
-        });
-      }
-
-      function saveIconPositions(){
-        var positions = {};
-        document.querySelectorAll('.desk-icon').forEach(function(icon,i){
-          var id = icon.getAttribute('data-target') || 'icon-'+i;
-          positions[id] = {left:icon.style.left||'',top:icon.style.top||''};
-        });
-        localStorage.setItem('desk-icon-positions',JSON.stringify(positions));
-      }
+      } else if(boot){ boot.remove(); }
 
       // ── Clock ──
-      function updateClock(){
-        var now = new Date();
-        var h = now.getHours().toString().padStart(2,'0');
-        var m = now.getMinutes().toString().padStart(2,'0');
-        var el = document.getElementById('trayClock');
-        if(el) el.textContent = h+':'+m;
+      function tick(){
+        var n=new Date(),h=n.getHours().toString().padStart(2,'0'),m=n.getMinutes().toString().padStart(2,'0');
+        var el=document.getElementById('clock');if(el)el.textContent=h+':'+m;
       }
+      tick();setInterval(tick,1000);
 
-      // ── Search Dialog ──
-      function openSearchDialog(){
-        var searchIdx = [];
-        try{ var raw = document.getElementById('searchIndexData')?.textContent; if(raw) searchIdx = JSON.parse(raw); }catch(e){}
-
-        var overlay = document.createElement('div');
-        overlay.className = 'dialog-overlay';
-        overlay.id = 'searchDialogOverlay';
-        overlay.innerHTML = ''+
-          '<div class="dialog-box">'+
-            '<div class="dialog-titlebar"><span class="dialog-title">🔍 Search</span>'+
-              '<button class="win-btn win-btn-close" id="searchCloseBtn">✕</button>'+
-            '</div>'+
-            '<div class="dialog-body">'+
-              '<input class="dialog-input" id="searchDialogInput" placeholder="Type to find scrolls..." autofocus>'+
-              '<div id="searchDialogResults" style="max-height:300px;overflow-y:auto"></div>'+
-              '<div class="dialog-actions">'+
-                '<button class="dialog-btn" id="searchCancelBtn">Cancel</button>'+
-              '</div>'+
-            '</div>'+
-          '</div>';
-
-        document.body.appendChild(overlay);
-
-        function close(){ if(overlay.parentNode) overlay.remove(); }
-        function doSearch(q){
-          var results = document.getElementById('searchDialogResults');
-          if(!results) return;
-          if(!q.trim()){ results.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px">Type to search...</p>'; return; }
-          var matches = searchIdx.filter(function(p){
-            var t = p.title.toLowerCase(), d = p.description.toLowerCase(), qq = q.toLowerCase();
-            return t.indexOf(qq)!==-1 || d.indexOf(qq)!==-1;
-          });
-          if(matches.length===0){
-            results.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px">No scrolls found.</p>';
-            return;
-          }
-          results.innerHTML = matches.map(function(p){
-            return '<div class="quest-item" style="padding:8px;cursor:pointer;border:1px solid transparent;margin:2px 0"'+
-              ' onmouseover="this.style.borderColor=\'var(--win-shadow)\'" onmouseout="this.style.borderColor=\'transparent\'"'+
-              ' onclick="window.open(\'/blog/'+p.id+'\',\'_self\')">'+
-              '<strong>'+p.title+'</strong><br><small style="color:var(--text-secondary)">'+p.description+'</small></div>';
-          }).join('');
-        }
-
-        overlay.addEventListener('click',function(e){ if(e.target===overlay) close(); });
-        document.getElementById('searchCloseBtn').addEventListener('click',close);
-        document.getElementById('searchCancelBtn').addEventListener('click',close);
-        var input = document.getElementById('searchDialogInput');
-        input.addEventListener('input',function(){ doSearch(this.value); });
-        setTimeout(function(){ input.focus(); },100);
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown',function escHandler(e){
-          if(e.key==='Escape'){ close(); document.removeEventListener('keydown',escHandler); }
+      // ── Theme ──
+      var themeBtn=document.getElementById('themeBtn');
+      if(themeBtn){
+        themeBtn.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'🌙':'☀';
+        themeBtn.addEventListener('click',function(){
+          var h=document.documentElement,n=h.getAttribute('data-theme')==='dark'?'light':'dark';
+          h.setAttribute('data-theme',n);localStorage.setItem('theme',n);
+          themeBtn.textContent=n==='dark'?'🌙':'☀';
         });
       }
 
-      // ── Run Dialog (easter egg) ──
-      function openRunDialog(){
-        var overlay = document.createElement('div');
-        overlay.className = 'dialog-overlay';
-        overlay.innerHTML = ''+
-          '<div class="dialog-box" style="min-width:280px">'+
-            '<div class="dialog-titlebar"><span class="dialog-title">▶ Run</span>'+
-              '<button class="win-btn win-btn-close" id="runCloseBtn">✕</button>'+
-            '</div>'+
-            '<div class="dialog-body">'+
-              '<p style="font-size:var(--text-xs)">Type the name of a program or scroll:</p>'+
-              '<input class="dialog-input" id="runDialogInput" placeholder="e.g. cat, quests, about...">'+
-              '<div class="dialog-actions">'+
-                '<button class="dialog-btn" id="runOkBtn">OK</button>'+
-                '<button class="dialog-btn" id="runCancelBtn">Cancel</button>'+
-              '</div>'+
-            '</div>'+
-          '</div>';
-
-        document.body.appendChild(overlay);
-
-        function close(){ if(overlay.parentNode) overlay.remove(); }
-        function execute(cmd){
-          close();
-          cmd = (cmd||'').toLowerCase().trim();
-          if(cmd==='cat'||cmd==='catgame'){ Desktop.openWindow('catgame','Cat Runner',buildCatGameContent(),'🐱'); }
-          else if(cmd==='quests'||cmd==='questlog'||cmd==='blog'){ Desktop.openWindow('questlog','Quest Log',buildQuestLogContent(),'📖'); }
-          else if(cmd==='tags'||cmd==='schools'){ Desktop.openWindow('tags','Spell Schools',buildTagsContent(),'📁'); }
-          else if(cmd==='about'||cmd==='readme'){ Desktop.openWindow('about','README.txt',buildAboutContent(),'ℹ️'); }
-          else if(cmd==='help'||cmd==='?'){ Desktop.openWindow('help','Help',buildAboutContent(),'❓'); }
-          else if(cmd){ alert('Program not found: '+cmd+'\n\nTry: cat, quests, tags, about, help'); }
-        }
-
-        overlay.addEventListener('click',function(e){ if(e.target===overlay) close(); });
-        document.getElementById('runCloseBtn').addEventListener('click',close);
-        document.getElementById('runCancelBtn').addEventListener('click',close);
-        document.getElementById('runOkBtn').addEventListener('click',function(){
-          execute(document.getElementById('runDialogInput').value);
-        });
-        var inp = document.getElementById('runDialogInput');
-        inp.addEventListener('keydown',function(e){ if(e.key==='Enter') execute(inp.value); });
-        setTimeout(function(){ inp.focus(); },100);
-        document.addEventListener('keydown',function escHandler(e){
-          if(e.key==='Escape'){ close(); document.removeEventListener('keydown',escHandler); }
-        });
+      // ── Search ──
+      var sIdx=[];
+      try{var rd=document.getElementById('searchData')?.textContent;if(rd)sIdx=JSON.parse(rd)}catch(e){}
+      var overlay=document.getElementById('searchOverlay');
+      var input=document.getElementById('searchInput');
+      var results=document.getElementById('searchResults');
+      function openSearch(){
+        overlay.classList.add('open');input.value='';input.focus();renderResults('');
+        document.body.style.overflow='hidden';
       }
-
-      // ── Global keyboard shortcuts ──
+      function closeSearch(){
+        overlay.classList.remove('open');document.body.style.overflow='';
+      }
+      function renderResults(q){
+        if(!q.trim()){results.innerHTML='<div class="search-empty">Start typing to find articles...</div>';return}
+        var m=sIdx.filter(function(p){
+          var t=p.title.toLowerCase(),d=p.description.toLowerCase(),qq=q.toLowerCase();
+          return t.indexOf(qq)!==-1||d.indexOf(qq)!==-1;
+        });
+        if(!m.length){results.innerHTML='<div class="search-empty">No scrolls found.</div>';return}
+        results.innerHTML=m.map(function(p){
+          return '<a href="/blog/'+p.id+'" class="search-item"><div class="search-item-title">'+p.title+'</div><div class="search-item-desc">'+p.description+'</div></a>';
+        }).join('');
+      }
+      document.getElementById('searchBtn').addEventListener('click',openSearch);
+      document.getElementById('searchClose').addEventListener('click',closeSearch);
+      overlay.addEventListener('click',function(e){if(e.target===overlay)closeSearch()});
+      input.addEventListener('input',function(){renderResults(input.value)});
       document.addEventListener('keydown',function(e){
-        if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
-        if(e.key==='k'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); openSearchDialog(); }
-        if(e.key==='/'&&document.activeElement===document.body){ e.preventDefault(); openSearchDialog(); }
-        if(e.key==='r'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); openRunDialog(); }
+        if(e.key==='Escape')closeSearch();
+        if(e.key==='k'&&(e.ctrlKey||e.metaKey)){e.preventDefault();openSearch()}
+        if(e.key==='/'&&document.activeElement===document.body){e.preventDefault();openSearch()}
       });
-
-      // ── 404: show BSOD if is404 flag set ──
-      if(cfg.is404){
-        setTimeout(function(){
-          var bsod = document.createElement('div');
-          bsod.className = 'bsod';
-          bsod.innerHTML = ''+
-            '<div class="bsod-title">ARCANE OS</div>'+
-            '<div class="bsod-face">:(</div>'+
-            '<div class="bsod-text">'+
-              'A fatal exception 0x00000404 has occurred at 0028:C0001234 in VXD BLOG(01).<br><br>'+
-              'The current page could not be found. The realm you seek does not exist in this dimension.<br><br>'+
-              '* Press any key to return to the desktop.<br>'+
-              '* Press CTRL+ALT+DEL to restart. Just kidding. We all know that doesn\'t work.'+
-            '</div>'+
-            '<div class="bsod-blink">Press any key to continue...</div>';
-          document.body.appendChild(bsod);
-          bsod.addEventListener('click',function(){ window.location.href='/'; });
-          document.addEventListener('keydown',function handler(){ window.location.href='/'; document.removeEventListener('keydown',handler); });
-        },100);
-      }
     })();
   </script>
 </body>
