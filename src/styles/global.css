@@ -164,7 +164,7 @@ img{max-width:100%;height:auto}
 .shooting-star{
   position:fixed;pointer-events:none;z-index:1;
   width:2px;height:80px;
-  background:linear-gradient(to bottom,var(--star-white),transparent);
+  background:linear-gradient(to top,var(--star-white),transparent);
   animation:shoot 3s ease-in forwards;
   opacity:0;
 }
