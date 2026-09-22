@@ -1,13 +1,20 @@
-import {chromium,devices} from '/tmp/codex-blog-check/node_modules/playwright/index.mjs';
+const tools=process.env.BLOG_CHECK_TOOLS||'/tmp/codex-blog-check/node_modules';
+const {chromium,devices}=await import(`${tools}/playwright/index.mjs`);
+import {execFileSync,spawn} from 'node:child_process';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,rm,readFile,readdir} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,rm,readFile,readdir,cp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-const chromePath='/tmp/codex-blog-browsers/chromium-1243/chrome-linux64/chrome';
-const base='http://127.0.0.1:4322',results=[],errors=[];
+const chromePath=process.env.CHROME_PATH||'/tmp/codex-blog-browsers/chromium-1243/chrome-linux64/chrome';
+const base='http://127.0.0.1:4326',results=[],errors=[];
 const temp=await mkdtemp(join(tmpdir(),'between-browser-'));
-let browser,zoom;
+let browser,zoom,server;
 try {
+ const siteRoot=join(temp,'site');await mkdir(siteRoot);
+ for(const file of ['build.mjs','lib.mjs','serve.mjs','assets','content'])await cp(new URL('../'+file,import.meta.url),join(siteRoot,file),{recursive:true});
+ execFileSync(process.execPath,[join(siteRoot,'build.mjs'),'--review']);
+ server=spawn(process.execPath,[join(siteRoot,'serve.mjs')],{env:{...process.env,PORT:'4326'},stdio:'pipe'});
+ for(let i=0;i<50;i++){try{if((await fetch(base)).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}
  browser=await chromium.launch({executablePath:chromePath,headless:true,args:['--no-sandbox']});
  const context=await browser.newContext({viewport:{width:1440,height:900},reducedMotion:'reduce'});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
@@ -20,19 +27,19 @@ try {
  await page.reload();await at(ids[3]);await page.goto(base+'/posts/a-little-space/#'+encodeURIComponent(ids[1]));await at(ids[1]);
  results.push('中文及重复标题：直接地址、点击、刷新、历史后退/前进均定位在视口顶部且不被遮挡');
  const code=page.locator('[data-code]');await context.grantPermissions(['clipboard-read','clipboard-write']);
- await code.click();await page.waitForFunction(()=>document.querySelector('[data-code]').textContent==='已复制');
- await code.evaluate(b=>{for(let i=0;i<10;i++)b.click();});assert.equal(await code.isDisabled(),true);
- await page.waitForFunction(()=>document.querySelector('[data-code]').textContent==='复制代码'&&!document.querySelector('[data-code]').disabled);
+ await code.click();await page.waitForFunction(()=>document.querySelector('[data-code]').textContent.includes('已复制'));
+ await code.evaluate(b=>{for(let i=0;i<10;i++)b.click();});assert.equal(await code.getAttribute('aria-disabled'),'true');
+ await page.waitForFunction(()=>document.querySelector('[data-code]').textContent.includes('复制代码')&&!document.querySelector('[data-code]').hasAttribute('aria-disabled'));
  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),await page.locator('pre code').textContent());
- await page.locator('[data-copy]').first().click();await page.waitForFunction(()=>document.querySelector('[data-copy]').textContent==='已复制');
+ await page.locator('[data-copy]').first().click();await page.waitForFunction(()=>document.querySelector('[data-copy]').classList.contains('copied'));
  const chapter=await page.evaluate(()=>navigator.clipboard.readText());assert.equal(decodeURIComponent(new URL(chapter).hash.slice(1)),ids[0]);
- await page.locator('.author-line [data-copy]').click();await page.waitForFunction(()=>document.querySelector('.author-line [data-copy]').textContent==='已复制');assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),base+'/posts/a-little-space/');
+ await page.locator('.author-line [data-copy]').click();await page.waitForFunction(()=>document.querySelector('.author-line [data-copy]').textContent.includes('已复制'));assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),base+'/posts/a-little-space/');
  results.push('连续十次触发复制不会叠加计时或卡住按钮；代码、章节和文章链接实际写入内容正确');
  await page.locator('.prose figure').scrollIntoViewIfNeeded();await page.waitForFunction(()=>{const img=document.querySelector('.prose figure img');return img.complete&&img.naturalWidth>0;});
  assert.equal(await page.locator('.prose figure img').getAttribute('loading'),'lazy');assert.ok((await page.locator('.prose figure img').getAttribute('alt')).length>0);
  assert.equal(await page.locator('.prose figure a').getAttribute('href'),await page.locator('.prose figure img').getAttribute('src'));
  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:900});await page.locator('.prose figure').scrollIntoViewIfNeeded();assert.ok(await page.locator('.prose figure img').evaluate(img=>img.getBoundingClientRect().width<=img.closest('.prose').getBoundingClientRect().width));}
- await page.screenshot({path:'evidence/article-image-1440x900.png'});results.push('正文图片加载成功、宽高预留、替代文字、图注、原图链接与四档屏宽均验证');
+ await page.screenshot({path:'evidence/redesign/article-image-1440x900.png'});results.push('正文图片加载成功、宽高预留、替代文字、图注、原图链接与四档屏宽均验证');
  const mobile=await browser.newContext({...devices['iPhone 13'],reducedMotion:'reduce'});const touch=await mobile.newPage();
  await touch.goto(base);await touch.locator('.mobile-menu summary').tap();await touch.locator('[data-theme]').last().tap();assert.equal(await touch.locator('html').getAttribute('data-theme'),'dark');await touch.locator('[data-close-menu]').tap();
  await touch.locator('#walk').tap();assert.match(await touch.locator('#feedback').textContent(),/打了个招呼/);
@@ -42,7 +49,7 @@ try {
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:codeBounds.x+codeBounds.width-30,y:codeBounds.y+40}]});
  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:codeBounds.x+30,y:codeBounds.y+40}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await touch.waitForFunction(()=>document.querySelector('pre').scrollLeft>0);assert.ok(await touch.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- await touch.screenshot({path:'evidence/touch-code-390x664.png'});results.push('Chromium iPhone 13 触屏模拟：菜单、主题、猫、搜索、目录 tap 及代码块横向 swipe，页面不横向溢出');
+ await touch.screenshot({path:'evidence/redesign/touch-code-390x664.png'});results.push('Chromium iPhone 13 触屏模拟：菜单、主题、猫、搜索、目录 tap 及代码块横向 swipe，页面不横向溢出');
  // Chrome extension API changes the browser's actual tab zoom, not CSS zoom or pinch zoom.
  const ext=join(temp,'zoom-extension');await mkdir(ext);
  await writeFile(join(ext,'manifest.json'),JSON.stringify({manifest_version:3,name:'Local zoom acceptance',version:'1.0',permissions:['tabs'],background:{service_worker:'worker.js'}}));
@@ -50,17 +57,17 @@ try {
  zoom=await chromium.launchPersistentContext(join(temp,'profile'),{executablePath:chromePath,headless:true,viewport:null,ignoreDefaultArgs:['--disable-extensions'],args:['--no-sandbox','--window-size=1440,1000',`--disable-extensions-except=${ext}`,`--load-extension=${ext}`]});
  const worker=zoom.serviceWorkers()[0]||await zoom.waitForEvent('serviceworker');const zp=await zoom.newPage();await zp.goto(base);
  const widthBefore=await zp.evaluate(()=>innerWidth);
- const ratio=await worker.evaluate(async()=>{const tabs=await chrome.tabs.query({});const tab=tabs.find(t=>t.url?.startsWith('http://127.0.0.1:4322'));await chrome.tabs.setZoom(tab.id,2);return chrome.tabs.getZoom(tab.id);});assert.equal(ratio,2);
+ const ratio=await worker.evaluate(async()=>{const tabs=await chrome.tabs.query({});const tab=tabs.find(t=>t.url?.startsWith('http://127.0.0.1:4326'));await chrome.tabs.setZoom(tab.id,2);return chrome.tabs.getZoom(tab.id);});assert.equal(ratio,2);
  await zp.waitForFunction(before=>innerWidth<=before/2+1,widthBefore);
  const widthAfter=await zp.evaluate(()=>innerWidth);
  for(const route of ['/','/archive/','/topics/','/posts/a-little-space/','/missing/']){await zp.goto(base+route);assert.ok(await zp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`200% overflow ${route}`);}
  await zp.goto(base+'/posts/a-little-space/');await zp.locator('[data-search]').click();await zp.locator('#query').fill('写作');assert.ok(await zp.locator('#results a').count()>0);await zp.keyboard.press('Escape');
- const zoomCDP=await zoom.newCDPSession(zp);const shot=await zoomCDP.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,fromSurface:true});await writeFile('evidence/article-native-zoom-200.png',Buffer.from(shot.data,'base64'));
+ const zoomCDP=await zoom.newCDPSession(zp);const shot=await zoomCDP.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,fromSurface:true});await writeFile('evidence/redesign/article-native-zoom-200.png',Buffer.from(shot.data,'base64'));
  results.push(`Chromium 原生标签页缩放 200%（chrome.tabs.getZoom=2，布局视口 ${widthBefore}→${widthAfter}px）：主页面无横向溢出，搜索与键盘可操作`);
  // Check real exposed accessibility names and hierarchy via the browser accessibility tree.
  const ax=await context.newCDPSession(page);const tree=await ax.send('Accessibility.getFullAXTree');
  assert.ok(tree.nodes.some(n=>n.role?.value==='main'));assert.ok(tree.nodes.some(n=>n.role?.value==='heading'&&n.name?.value==='给生活留一点空白'));
  assert.deepEqual(errors,[]);
- await writeFile('evidence/finish-results.json',JSON.stringify({date:new Date().toISOString(),browser:await browser.version(),results,errors},null,2));
+ await writeFile('evidence/redesign/finish-results.json',JSON.stringify({date:new Date().toISOString(),browser:await browser.version(),results,errors},null,2));
  console.log(results.join('\n'));
-} finally {await zoom?.close();await browser?.close();await rm(temp,{recursive:true,force:true});}
+} finally {await zoom?.close();await browser?.close();if(server){server.kill();await new Promise(r=>server.exitCode!==null?r():server.once('exit',r));}await rm(temp,{recursive:true,force:true});}
