@@ -1,0 +1,31 @@
+{
+  "results": [
+    "阈值外没有第三方请求",
+    "300px 阈值内单次注入",
+    "10 秒超时",
+    "拒绝错误 iframe 来源的消息",
+    "迟到旧实例消息不能覆盖重试状态",
+    "对应 iframe 就绪后清除提示",
+    "第三方被拦截仍可阅读与重试",
+    "导航、Markdown 根路径链接均带 base",
+    "分享图绝对 URL 与 base 可访问",
+    "无 IntersectionObserver 的手动入口",
+    "短文首次渲染立即进入加载阈值"
+  ],
+  "attributes": {
+    "repo": "fixture/discussions",
+    "repoId": "test-only",
+    "category": "fixture",
+    "categoryId": "test-only",
+    "mapping": "specific",
+    "term": "post:reading-fixture",
+    "strict": "1",
+    "reactionsEnabled": "0",
+    "emitMetadata": "0",
+    "inputPosition": "top",
+    "theme": "light",
+    "lang": "zh-CN",
+    "loading": "eager"
+  },
+  "limitations": "仅模拟第三方传输；真实 repo / 登录 / Discussions 映射尚未验收。"
+}
