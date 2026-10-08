@@ -1,0 +1,14 @@
+---
+import { path } from '../lib/urls';
+interface Post { data: {title:string; slug:string; summary:string; date:string}; minutes:number }
+interface Props { posts: Post[]; grouped?:boolean }
+const {posts,grouped = false} = Astro.props;
+const years = grouped ? [...new Set(posts.map(p => p.data.date.slice(0,4)))] : [''];
+---
+{years.map(year => <section class="post-year" aria-label={year ? `${year} 年文章` : '最近文章'}>
+  {year && <h2 class="year-label">{year}</h2>}
+  <ul class="post-list">{posts.filter(p => !year || p.data.date.startsWith(year)).map(p => <li class="post-row">
+    <div class="post-meta"><time datetime={p.data.date}>{p.data.date}</time><span>约 {p.minutes} 分钟</span></div>
+    <h3><a href={path(`posts/${p.data.slug}/`)}>{p.data.title}</a></h3><p class="summary">{p.data.summary}</p>
+  </li>)}</ul>
+</section>)}

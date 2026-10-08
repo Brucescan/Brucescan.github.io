@@ -1,0 +1,5 @@
+---
+import Base from '../layouts/Base.astro';
+import {path} from '../lib/urls';
+---
+<Base title="页面不存在" noindex><div class="reading-width page"><p class="eyebrow">404</p><h1>页面不存在</h1><p class="intro">这个地址没有对应的内容。换个入口，继续阅读。</p><div class="hero-links"><a class="button primary" href={path()}>返回首页</a><a class="button" href={path('posts/')}>文章列表</a></div></div></Base>

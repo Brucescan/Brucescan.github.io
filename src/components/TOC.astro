@@ -1,0 +1,6 @@
+---
+import type { MarkdownHeading } from 'astro';
+interface Props {headings: MarkdownHeading[]; mobile?: boolean}
+const {headings,mobile = false} = Astro.props;
+---
+{mobile ? <details class="toc-mobile"><summary>文章目录</summary><nav class="toc" aria-label="文章目录">{headings.map(h => <a href={`#${h.slug}`} class:list={[{'subheading':h.depth===3}]}>{h.text}</a>)}</nav></details> : <aside class="toc-desktop"><nav class="toc" aria-label="文章目录"><p class="toc-label">本页目录</p>{headings.map(h => <a href={`#${h.slug}`} class:list={[{'subheading':h.depth===3}]}>{h.text}</a>)}</nav></aside>}

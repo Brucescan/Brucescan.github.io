@@ -1,0 +1,29 @@
+---
+import {render} from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import TOC from '../../components/TOC.astro';
+import Giscus from '../../components/Giscus.astro';
+import {getPosts} from '../../lib/posts';
+import {path} from '../../lib/urls';
+import {site} from '../../data/site';
+export async function getStaticPaths() { return (await getPosts()).map(post => ({params:{slug:post.data.slug},props:{post}})); }
+const {post} = Astro.props;
+const {Content,headings} = await render(post);
+const toc = headings.filter(h => [2,3].includes(h.depth));
+const hasToc = toc.length >= 2;
+---
+<Base title={post.data.title} description={post.data.summary} article={post.data}>
+  <div class:list={['article-layout', {'has-toc':hasToc}]}>
+    <article class="article">
+      <header class="article-heading"><a class="back-link" href={path('posts/')}><span aria-hidden="true">←</span> 返回文章列表</a><h1>{post.data.title}</h1><p class="intro">{post.data.summary}</p><div class="post-meta"><time datetime={post.data.date}>{post.data.date}</time><span>约 {post.minutes} 分钟</span>{post.data.updated && <span>更新于 <time datetime={post.data.updated}>{post.data.updated}</time></span>}</div></header>
+      {hasToc && <TOC headings={toc} mobile />}
+      <div class="prose article-body"><Content /></div>
+      <footer class="author-note"><p>{site.name}</p><p class="muted">{site.description}</p><a href={path('about/')}>关于作者 <span aria-hidden="true">→</span></a></footer>
+      <Giscus slug={post.data.slug} />
+    </article>
+    {hasToc && <TOC headings={toc} />}
+  </div>
+</Base>
+<script>
+  import '../../scripts/reading';
+</script>

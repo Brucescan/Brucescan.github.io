@@ -1,0 +1,60 @@
+---
+import {giscus} from '../data/site';
+interface Props {slug:string}
+const {slug} = Astro.props;
+---
+{giscus && <section class="comments" aria-labelledby="comments-heading" data-giscus={JSON.stringify({...giscus,term:`post:${slug}`})}>
+  <h2 id="comments-heading">讨论</h2>
+  <p class="muted">由 GitHub Discussions 提供，发表评论需 GitHub 登录。加载时将连接第三方服务。</p>
+  <p><a href={`https://github.com/${giscus.repo}/discussions`}>前往 GitHub Discussions <span aria-hidden="true">↗</span></a></p>
+  <p class="comment-status" role="status" aria-live="polite"></p><button class="button comment-retry" type="button" hidden>加载评论</button><div class="giscus-mount"></div>
+</section>}
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-giscus]')) {
+    const config = JSON.parse(root.dataset.giscus!);
+    const status = root.querySelector<HTMLElement>('.comment-status')!;
+    const button = root.querySelector<HTMLButtonElement>('.comment-retry')!;
+    const mount = root.querySelector<HTMLElement>('.giscus-mount')!;
+    let state = 'idle'; let attempt = 0; let timer: ReturnType<typeof setTimeout>;
+    let observer: IntersectionObserver | undefined;
+    let cleanup = () => {};
+    function load() {
+      if (state === 'loading' || state === 'ready') return;
+      observer?.disconnect(); cleanup(); clearTimeout(timer); mount.replaceChildren();
+      const generation = ++attempt; state = 'loading'; button.hidden = true; status.textContent = '正在加载评论…';
+      const host = document.createElement('div'); mount.append(host);
+      // Keep each official script's fallback container beside its own script.
+      // A late removed script then cannot attach an iframe to a newer attempt.
+      const containers = new MutationObserver(() => {
+        for (const container of host.querySelectorAll('.giscus')) container.className = 'giscus-instance';
+      });
+      containers.observe(host,{childList:true,subtree:true});
+      const script = document.createElement('script'); script.src = 'https://giscus.app/client.js'; script.async = true; script.crossOrigin = 'anonymous';
+      const attrs = {'repo':config.repo, 'repo-id':config.repoId, category:config.category, 'category-id':config.categoryId, mapping:'specific', term:config.term, strict:'1', 'reactions-enabled':'0', 'emit-metadata':'0', 'input-position':'top', theme:'light', lang:'zh-CN', loading:'eager'};
+      for (const [key,value] of Object.entries(attrs)) script.setAttribute(`data-${key}`,value as string);
+      function fail(message:string) {
+        if (generation !== attempt || state === 'ready') return;
+        clearTimeout(timer); state = 'error'; status.textContent = message; button.textContent = '重试'; button.hidden = false;
+      }
+      function message(event:MessageEvent) {
+        const iframe = host.querySelector('iframe');
+        if (generation !== attempt || event.origin !== 'https://giscus.app' || !iframe || event.source !== iframe.contentWindow) return;
+        const data = event.data?.giscus;
+        if (data?.error && !String(data.error).includes('Discussion not found')) fail('评论加载失败，请重试或前往 GitHub Discussions');
+        else if (typeof data?.resizeHeight === 'number' && data.resizeHeight > 0) {
+          clearTimeout(timer); state = 'ready'; status.textContent = ''; button.hidden = true;
+        }
+      }
+      window.addEventListener('message',message);
+      script.onerror = () => fail('评论加载失败，请重试或前往 GitHub Discussions');
+      cleanup = () => { window.removeEventListener('message',message); script.onerror = null; containers.disconnect(); host.remove(); };
+      timer = setTimeout(() => fail('评论加载较慢，请重试或前往 GitHub Discussions'),10000);
+      host.append(script);
+    }
+    button.addEventListener('click',load);
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) load(); },{rootMargin:'0px 0px 300px 0px'});
+      observer.observe(root);
+    } else button.hidden = false;
+  }
+</script>
