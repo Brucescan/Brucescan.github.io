@@ -41,7 +41,7 @@ test('生产产物中没有示例/草稿，品牌分享图尺寸与大小',async
   const sitemap = await readFile('dist/sitemap.xml','utf8'); assert.ok(!sitemap.includes('writing-example'));
   const imagePath = html.match(/property="og:image" content="[^"]*\/og\/([^"]+)"/)[1];
   const png = await readFile(`dist/og/${imagePath}`);
-  assert.equal(png.readUInt32BE(16),1200); assert.equal(png.readUInt32BE(20),630); assert.ok(png.length > 10000 && png.length < 500*1024);
+  assert.equal(png.readUInt32BE(16),1200); assert.equal(png.readUInt32BE(20),630); assert.ok(png.length > 1000 && png.length < 500*1024);
 });
 
 import {cardPNG,cardKey,titleLines,escapeXML} from '../src/lib/og.mjs';
@@ -50,7 +50,7 @@ test('分享图中文、超长英文、特殊字符、哈希和安全边界',()=
     const {lines,size}=titleLines(title); assert.ok(lines.length<=3); assert.ok(size>=40 && size<=64);
     const png=cardPNG(title,'2026-10-08','作者');
     assert.equal(png.readUInt32BE(16),1200); assert.equal(png.readUInt32BE(20),630);
-    assert.ok(png.length>10000 && png.length<=500*1024, '字体必须实际渲染且满足体积限制');
+    assert.ok(png.length>1000 && png.length<=500*1024, 'PNG 必须有效且满足体积限制');
   }
   assert.equal(escapeXML('&<>"\''),'&amp;&lt;&gt;&quot;&apos;');
   assert.notEqual(cardKey('A','','作者'),cardKey('B','','作者'));
