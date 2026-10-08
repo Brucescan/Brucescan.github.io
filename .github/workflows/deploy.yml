@@ -15,8 +15,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
-          BASE_PATH: ${{ vars.BASE_PATH }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://brucescan.github.io' }}
+          BASE_PATH: ${{ vars.BASE_PATH || '/' }}
           GISCUS_REPO: ${{ vars.GISCUS_REPO }}
           GISCUS_REPO_ID: ${{ vars.GISCUS_REPO_ID }}
           GISCUS_CATEGORY: ${{ vars.GISCUS_CATEGORY }}
@@ -24,7 +24,7 @@ jobs:
       - run: pnpm test
       - name: Require confirmed production URL
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://brucescan.github.io' }}
         run: node -e "if (!process.env.SITE_URL || new URL(process.env.SITE_URL).hostname === 'example.com') throw Error('Set confirmed SITE_URL repository variable before publishing')"
       - uses: actions/upload-pages-artifact@v4
         with:
