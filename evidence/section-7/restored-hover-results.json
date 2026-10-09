@@ -1,0 +1,9 @@
+{
+  "browser": "153.0.8010.12",
+  "checks": [
+    "desktop hover -3px and shadow",
+    "mouseleave resets",
+    "reduced motion disables transform and transition",
+    "touch has no hover transform"
+  ]
+}

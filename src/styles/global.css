@@ -68,7 +68,8 @@ main:focus {outline:none}
 .empty-state {padding-block:24px; border-top:1px solid var(--line); color:var(--muted)}
 .project-grid {display:grid; grid-template-columns:1fr; gap:24px}
 .project-grid>div {min-width:0}
-.project-card {height:100%; background:var(--surface); border-radius:16px; overflow:hidden}
+.project-card {height:100%; background:var(--surface); border-radius:16px; overflow:hidden; transition:transform 220ms var(--ease-out-spring), box-shadow 220ms var(--ease-out-spring)}
+@media(hover:hover) and (pointer:fine) {.project-card:hover {transform:translateY(-3px); box-shadow:0 8px 24px rgb(0 0 0/.06)}}
 .project-body {padding:24px}
 .project-body p {margin:12px 0 16px; color:var(--muted); font-size:16px}
 .tags {list-style:none; display:flex; flex-wrap:wrap; gap:4px 16px; padding:0; margin:0 0 16px; font-size:13px; color:var(--muted)}
@@ -144,4 +145,4 @@ th {background:var(--surface); font-weight:600}
 @media(max-width:360px) {:root {--page-gutter:16px}}
 @media(min-width:700px) {:root {--page-gutter:32px; --nav-height:64px; --body-size:18px; --code-size:14px} .project-grid {grid-template-columns:repeat(2,minmax(0,1fr))} .hero {padding-block:48px 40px} .home-section {margin-top:48px} .project-body {padding:32px} .project-media {padding:24px} .page {padding-top:64px} .site-footer {margin-top:96px} .article-layout {margin-top:48px}}
 @media(min-width:1100px) {:root {--page-gutter:40px} .project-grid {grid-template-columns:repeat(12,minmax(0,1fr))} .project-grid>div {grid-column:span 6} .article-layout.has-toc {max-width:972px; display:grid; grid-template-columns:minmax(0,700px) 200px; gap:72px} .toc-mobile {display:none} .toc-desktop {display:block; min-width:0} .toc-desktop .toc {position:sticky; top:calc(var(--nav-height) + 24px); max-height:calc(100dvh - var(--nav-height) - 48px); overflow:auto}}
-@media(prefers-reduced-motion:reduce) {html {scroll-behavior:auto} *,*:before,*:after {animation:none!important; transition:none!important} .button:active {transform:none}}
+@media(prefers-reduced-motion:reduce) {html {scroll-behavior:auto} *,*:before,*:after {animation:none!important; transition:none!important} .project-card:hover,.button:active {transform:none}}

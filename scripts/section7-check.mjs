@@ -52,7 +52,13 @@ for(const width of [360,390,768,1440]) {
 }
 await page.setViewportSize({width:1440,height:900});await page.goto(production);await page.waitForTimeout(550);
 const card=page.locator('.project-card');await card.hover();
-assert.deepEqual(await card.evaluate(el=>{const s=getComputedStyle(el);return [s.transform,s.boxShadow,s.cursor,el.tabIndex];}),['none','none','auto',-1]);
+await page.waitForTimeout(250);
+assert.deepEqual(await card.evaluate(el=>{const s=getComputedStyle(el);return [s.transform,s.boxShadow!=='none',s.cursor,el.tabIndex];}),['matrix(1, 0, 0, 1, 0, -3)',true,'auto',-1]);
+await page.emulateMedia({reducedMotion:'reduce'});
+assert.equal(await card.evaluate(el=>getComputedStyle(el).transform),'none');
+await page.emulateMedia({reducedMotion:'no-preference'});
+await page.mouse.move(0,0);await page.waitForTimeout(250);
+assert.equal(await card.evaluate(el=>getComputedStyle(el).transform),'none');
 assert.ok(await page.locator('.tags li').evaluateAll(items=>items.every(el=>{const s=getComputedStyle(el);return s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.borderTopWidth==='0px'&&el.tabIndex===-1;})));
 await page.keyboard.press('Tab');assert.ok(await page.locator('.skip-link').evaluate(el=>el===document.activeElement));
 await page.keyboard.press('Enter');assert.ok(await page.locator('#main').evaluate(el=>el===document.activeElement));
