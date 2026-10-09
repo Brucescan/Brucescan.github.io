@@ -2,4 +2,4 @@
 import Base from '../layouts/Base.astro';
 import {site} from '../data/site';
 ---
-<Base title="关于"><div class="reading-width page"><header class="page-heading"><h1>关于</h1><p class="intro">{site.description}</p></header><div class="prose">{site.about.map(p => <p>{p}</p>)}{site.links.length > 0 && <><h2>公开链接</h2><ul>{site.links.map(link => <li><a href={link.url}>{link.label} <span aria-hidden="true">↗</span></a></li>)}</ul></>}</div></div></Base>
+<Base title="关于"><div class="reading-width page"><header class="page-heading"><h1>关于</h1><p class="intro">{site.description}</p></header><div class="prose">{site.about.map(p => <p>{p}</p>)}{site.links.length > 0 && <><h2>公开链接</h2><ul>{site.links.map(link => <li><a class="text-link" href={link.url}>{link.label}</a></li>)}</ul></>}</div></div></Base>

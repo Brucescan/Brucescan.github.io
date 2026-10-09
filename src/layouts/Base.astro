@@ -29,6 +29,6 @@ const imageAlt = article ? `${article.title} — ${article.date} — ${site.name
 <body>
   <Header />
   <main id="main" class="shell" tabindex="-1"><slot /></main>
-  <footer class="shell site-footer"><span>© {new Date().getFullYear()} {site.name}</span><div>{site.links.map(link => <a href={link.url}>{link.label} <span aria-hidden="true">↗</span></a>)}</div></footer>
+  <footer class="shell site-footer"><span>© {new Date().getFullYear()} {site.name}</span><div>{site.links.map(link => <a href={link.url}>{link.label}</a>)}</div></footer>
 </body>
 </html>

@@ -1,0 +1,30 @@
+{
+  "browser": "153.0.8010.12",
+  "results": [
+    "360px /",
+    "360px /posts/",
+    "360px /about/",
+    "360px /posts/reading-fixture/",
+    "390px /",
+    "390px /posts/",
+    "390px /about/",
+    "390px /posts/reading-fixture/",
+    "768px /",
+    "768px /posts/",
+    "768px /about/",
+    "768px /posts/reading-fixture/",
+    "1440px /",
+    "1440px /posts/",
+    "1440px /about/",
+    "1440px /posts/reading-fixture/",
+    "复制成功、原文与焦点、防重入",
+    "复制 denied",
+    "复制 unsupported",
+    "目录当前项、直接 hash、刷新、历史与底部",
+    "200% 字体缩放与键盘焦点",
+    "无 JS：正文、目录、复制降级",
+    "减少动态效果",
+    "404 与正式内容隔离"
+  ],
+  "errors": []
+}

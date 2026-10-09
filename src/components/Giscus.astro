@@ -6,7 +6,7 @@ const {slug} = Astro.props;
 {giscus && <section class="comments" aria-labelledby="comments-heading" data-giscus={JSON.stringify({...giscus,term:`post:${slug}`})}>
   <h2 id="comments-heading">讨论</h2>
   <p class="muted">由 GitHub Discussions 提供，发表评论需 GitHub 登录。加载时将连接第三方服务。</p>
-  <p><a href={`https://github.com/${giscus.repo}/discussions`}>前往 GitHub Discussions <span aria-hidden="true">↗</span></a></p>
+  <p><a href={`https://github.com/${giscus.repo}/discussions`}>前往 GitHub Discussions</a></p>
   <p class="comment-status" role="status" aria-live="polite"></p><button class="button comment-retry" type="button" hidden>加载评论</button><div class="giscus-mount"></div>
 </section>}
 <script>

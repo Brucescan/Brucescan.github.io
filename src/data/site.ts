@@ -5,7 +5,7 @@ export const site = z.object({
   links: z.array(z.object({ label: z.string().min(1), url: https })),
 }).parse({
   name: 'flazi',
-  description: '这个作者很懒，什么都没有留下。',
+  description: '这里放一些笔记和做过的东西。',
   about: [
     '你好，我是 flazi。这里是我的个人网站，用来放一些笔记和做过的东西。',
     '这个站点从 Astro 开始，用 Markdown 整理内容。页面保持简单，让文章和作品自己说话。',

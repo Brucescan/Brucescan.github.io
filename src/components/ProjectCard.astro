@@ -7,6 +7,6 @@ const {project:p, eager = false} = Astro.props;
 <article class="project-card">
 
   <div class="project-body"><h3>{p.name}</h3><p>{p.description}</p><ul class="tags" aria-label="技术栈">{p.stack.map(tag => <li>{tag}</li>)}</ul>
-  <div class="project-links"><a href={p.repoUrl} aria-label={`${p.name} 的 GitHub 仓库`}>GitHub <span aria-hidden="true">↗</span></a>{p.demoUrl && <a href={p.demoUrl} aria-label={`${p.name} 的 Demo`}>Demo <span aria-hidden="true">↗</span></a>}</div></div>
+  <div class="project-links"><a href={p.repoUrl} aria-label={`${p.name} 的 GitHub 仓库`}>GitHub</a>{p.demoUrl && <a href={p.demoUrl} aria-label={`${p.name} 的 Demo`}>Demo</a>}</div></div>
   {p.image && <div class="project-media"><div class="image-window"><img src={path(p.image.src)} alt={p.image.alt} width={p.image.width} height={p.image.height} loading={eager ? 'eager' : 'lazy'} decoding="async" /></div></div>}
 </article>

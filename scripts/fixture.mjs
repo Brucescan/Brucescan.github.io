@@ -18,7 +18,17 @@ if (process.env.FIXTURE_MEDIA === '1') {
 }
 projectSource = projectSource.replace(/export const projects =[\s\S]*$/,`export const projects = z.array(projectSchema).max(4).parse(${JSON.stringify(examples)});\n`);
 await writeFile(join(target,'src/data/projects.ts'),projectSource);
+if (process.env.SECTION7 === '1') {
+  const home = await readFile('src/pages/index.astro','utf8');
+  for (let count = 0; count <= 4; count++) for (const hasPosts of [false,true]) {
+    const projects = Array.from({length:count},(_,i)=>({...examples[0],name:`验收作品 ${i+1}（非正式内容）`}));
+    const page = home.replace("import {projects} from '../data/projects';", `import type {Project} from '../data/projects';\nconst projects: Project[] = ${JSON.stringify(projects)};`)
+      .replace('const posts = await getPosts();',`const posts = (await getPosts()).slice(0, ${hasPosts ? 3 : 0});`);
+    await writeFile(join(target,`src/pages/check-${count}-${hasPosts ? 'posts' : 'empty'}.astro`),page);
+  }
+}
 execFileSync(process.execPath,[resolve('node_modules/astro/bin/astro.mjs'),'build'],{cwd:target,stdio:'inherit',env:{...process.env,ASTRO_TELEMETRY_DISABLED:'1',SITE_URL:'https://example.com',BASE_PATH:process.env.BASE_PATH || '/'}});
-await mkdir('evidence',{recursive:true});
-await writeFile('evidence/fixture-path.txt',target+'\n');
+const evidence = process.env.EVIDENCE_DIR || 'evidence';
+await mkdir(evidence,{recursive:true});
+await writeFile(join(evidence,'fixture-path.txt'),target+'\n');
 console.log(`Fixture directory: ${target}`);

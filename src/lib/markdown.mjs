@@ -53,9 +53,6 @@ export function htmlEnhancements({base = '/'} = {}) {
           if ((!node.properties.width || !node.properties.height) && !file.data.astro?.localImagePaths?.includes(decodeURI(node.properties.src))) file.fail('图片必须声明 width / height；本地图片请使用 Astro 可推导尺寸的相对路径');
           node.properties.loading = 'lazy'; node.properties.decoding = 'async';
         }
-        if (node.tagName === 'a' && /^https:\/\//.test(node.properties.href)) {
-          node.children.push(text(' '), el('span', {'aria-hidden':'true'}, [text('↗')]));
-        }
         if (node.tagName === 'table') return el('div', {className:['table-scroll'], tabIndex:0, role:'region', 'aria-label':'表格，可横向滚动'}, [node]);
         if (node.tagName === 'pre') {
           const language = node.properties['data-language'] || 'text';

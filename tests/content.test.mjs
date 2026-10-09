@@ -19,6 +19,13 @@ test('阅读估算排除 frontmatter / 标记 / 代码 / URL', () => {
   assert.equal(readingTime('---\ntitle: '+ '中'.repeat(800)+'\n---\n```js\n'+'a '.repeat(1000)+'\n```\nhttps://example.com/'+ 'x'.repeat(1000)),1);
 });
 const processor = await createMarkdownProcessor({smartypants:false,remarkPlugins:[markdownContract,alerts],rehypePlugins:[rehypeRaw,[htmlEnhancements,{base:'/garden/'}]],shikiConfig:{theme:'github-light'}});
+test('外链不追加装饰箭头，原文和代码箭头保留',async()=> {
+  const {code} = await processor.render('[GitHub](https://github.com)\n\n方向 → 下一步\n\n```text\nA → B\n```');
+  assert.match(code, /<a href="https:\/\/github.com">GitHub<\/a>/);
+  assert.ok(!code.includes('↗'));
+  assert.match(code,/方向 → 下一步/);
+  assert.match(code,/A → B/);
+});
 test('Callout 五种类型、普通/未知/嵌套引用、围栏与混排',async()=> {
   for (const [kind,label] of Object.entries({NOTE:'说明',TIP:'提示',IMPORTANT:'重要',WARNING:'警告',CAUTION:'注意'})) {
     const {code} = await processor.render(`> [!${kind}]\n> **内容** 与 [链接](https://example.com/a-b)\n>\n> - 列表\n>\n>     code`);
